@@ -86,6 +86,8 @@ presets:
     icon: mdi:playlist-music
 ```
 
+Ползунок перемотки отображается при наличии у entity атрибутов `media_duration` и `media_position` и отправляет `media_player.media_seek` с `seek_position` в секундах. Для локального режима YandexStation интеграция поддерживает перемотку, если текущий плеер отдал длительность трека.
+
 В `presets[].icon` и `quick_commands[].icon` поддерживаются иконки Home Assistant в формате `mdi:name`, например `mdi:music`, `mdi:radio`, `mdi:volume-minus` или `mdi:stop`.
 
 Параметр `icon` задаёт иконку Home Assistant рядом с названием станции. Поддерживаются `mdi:*`, `hass:*` и иконки интеграции `yandex:*`, например `yandex:station-mini`. Для отображения `yandex:*` соответствующий набор иконок должен быть установлен и зарегистрирован в Home Assistant; сама карточка передаёт значение в `ha-icon`, но не добавляет набор иконок. Если параметр не задан, используется `mdi:speaker-wireless`.

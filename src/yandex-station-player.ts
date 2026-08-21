@@ -112,7 +112,8 @@ const CARD_STYLE = `
 .ysp-volume-glyph { width:18px; height:18px; --mdc-icon-size:18px; }
 .ysp-range { min-width:0; flex:1; height:8px; accent-color:var(--ysp-primary); cursor:pointer; }
 .ysp-progress { gap:8px; width:100%; color:var(--ysp-secondary); font-size:11px; }
-.ysp-progress input { min-width:0; flex:1; height:6px; accent-color:var(--ysp-primary); cursor:pointer; }
+.ysp-progress input { min-width:0; flex:1; height:8px; margin:0; accent-color:var(--ysp-primary); cursor:pointer; }
+.ysp-seek-range { border-radius:999px; background:linear-gradient(to right, var(--ysp-primary) 0 var(--ysp-seek-pct), var(--ysp-surface) var(--ysp-seek-pct) 100%); }
 .ysp-command-row, .ysp-preset-row { gap:8px; flex-wrap:wrap; }
 .ysp-chip, .ysp-command, .ysp-preset { min-height:32px; padding:8px 12px; border-radius:999px; background:var(--ysp-surface); color:var(--ysp-primary); font-size:12px; font-weight:600; line-height:1; }
 .ysp-icon { display:inline-flex; align-items:center; justify-content:center; vertical-align:middle; flex:0 0 auto; line-height:0; }
@@ -163,6 +164,17 @@ function formatTime(value: number): string {
   const minutes = Math.floor(value / 60);
   const seconds = Math.floor(value % 60).toString().padStart(2, '0');
   return `${minutes}:${seconds}`;
+}
+
+function currentMediaPosition(attributes: Record<string, unknown>, state: string | undefined, duration: number): number {
+  const position = Math.max(0, Number(attributes.media_position) || 0);
+  if (state !== 'playing' || duration <= 0) return Math.min(position, duration);
+
+  const updatedAt = asText(attributes.media_position_updated_at);
+  const updatedTimestamp = Date.parse(updatedAt);
+  if (!Number.isFinite(updatedTimestamp)) return Math.min(position, duration);
+
+  return Math.min(duration, position + Math.max(0, (Date.now() - updatedTimestamp) / 1000));
 }
 
 class YandexStationPlayerCard extends HTMLElement {
@@ -242,8 +254,9 @@ class YandexStationPlayerCard extends HTMLElement {
     const attributes = state?.attributes ?? {};
     const theme = this.mergedTheme();
     const volume = clamp(attributes.volume_level, 0, 1, 0.5);
-    const position = clamp(attributes.media_position, 0, Number(attributes.media_duration) || 1, 0);
     const duration = Math.max(0, Number(attributes.media_duration) || 0);
+    const position = currentMediaPosition(attributes, state?.state, duration);
+    const seekPercent = duration > 0 ? Math.round((position / duration) * 1000) / 10 : 0;
     const title = asText(attributes.media_title, state ? 'Ничего не играет' : 'Ожидание данных');
     const artist = asText(attributes.media_artist || attributes.media_album_name, state?.state === 'unavailable' ? 'Устройство недоступно' : 'Яндекс.Станция');
     const picture = asText(attributes.entity_picture);
@@ -279,7 +292,7 @@ class YandexStationPlayerCard extends HTMLElement {
         <div class="ysp-content">
           ${config.show_header !== false ? `<header class="ysp-header">${renderHaIcon(config.icon ?? 'mdi:speaker-wireless', 'ysp-device-icon')}<span class="ysp-name">${escapeHtml(config.name ?? 'Яндекс.Станция')}</span></header>` : ''}
           <section class="ysp-track">${artwork}<div class="ysp-track-info"><div class="ysp-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div><div class="ysp-artist" title="${escapeHtml(artist)}">${escapeHtml(artist)}</div></div></section>
-          ${config.show_progress !== false && duration > 0 ? `<section class="ysp-progress" aria-label="Позиция воспроизведения"><span>${formatTime(position)}</span><input type="range" min="0" max="${duration}" step="1" value="${position}" data-action="seek" aria-label="Перемотка"><span>${formatTime(duration)}</span></section>` : ''}
+          ${config.show_progress !== false && duration > 0 ? `<section class="ysp-progress" aria-label="Перемотка аудио"><span>${formatTime(position)}</span><input class="ysp-seek-range" type="range" min="0" max="${duration}" step="1" value="${position}" style="--ysp-seek-pct:${seekPercent}%" data-action="seek" aria-label="Перемотка аудио" aria-valuetext="${formatTime(position)} из ${formatTime(duration)}"><span>${formatTime(duration)}</span></section>` : ''}
           ${config.show_controls !== false ? `<section class="ysp-controls" aria-label="Управление воспроизведением"><button class="ysp-button" type="button" data-action="previous" aria-label="Предыдущий трек">${renderHaIcon('mdi:skip-previous', 'ysp-control-icon')}</button><button class="ysp-button primary" type="button" data-action="${isPlaying ? 'pause' : 'play'}" aria-label="${isPlaying ? 'Пауза' : 'Воспроизвести'}">${renderHaIcon(isPlaying ? 'mdi:pause' : 'mdi:play', 'ysp-control-icon')}</button><button class="ysp-button" type="button" data-action="next" aria-label="Следующий трек">${renderHaIcon('mdi:skip-next', 'ysp-control-icon')}</button></section>` : ''}
           ${config.show_volume !== false ? `<section class="ysp-volume" aria-label="Громкость"><span class="ysp-volume-icon">${renderHaIcon(volumeIcon, 'ysp-volume-glyph')}</span><input class="ysp-range" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость"><button class="ysp-chip ysp-mute-button" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}">${renderHaIcon(muteIcon, 'ysp-chip-icon')}</button></section>` : ''}
           ${config.show_presets !== false && presets.length > 0 ? `<section class="ysp-section"><p class="ysp-label">Избранное</p><div class="ysp-preset-row">${presets.map((preset, index) => `<button class="ysp-preset" type="button" data-action="preset" data-index="${index}">${renderPresetIcon(preset.icon)}<span>${escapeHtml(preset.name)}</span></button>`).join('')}</div></section>` : ''}
@@ -322,7 +335,11 @@ class YandexStationPlayerCard extends HTMLElement {
     const target = event.target instanceof HTMLInputElement ? event.target : null;
     if (!target) return;
     if (target.dataset.action === 'volume') this.call('volume_set', { volume_level: Number(target.value) });
-    if (target.dataset.action === 'seek') this.call('media_seek', { seek_position: Number(target.value) });
+    if (target.dataset.action === 'seek') {
+      this.call('media_seek', { seek_position: Number(target.value) });
+      target.setAttribute('aria-valuetext', `${formatTime(Number(target.value))} из ${formatTime(Number(target.max))}`);
+      target.style.setProperty('--ysp-seek-pct', `${Number(target.max) > 0 ? (Number(target.value) / Number(target.max)) * 100 : 0}%`);
+    }
   }
 }
 
