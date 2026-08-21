@@ -30,13 +30,13 @@ presets:
 quick_commands:
   - name: Тише
     command: сделай потише
-    icon: −
+    icon: mdi:volume-minus
   - name: Громче
     command: сделай погромче
-    icon: +
+    icon: mdi:volume-plus
   - name: Стоп
     command: останови музыку
-    icon: ■
+    icon: mdi:stop
 theme:
   primary: '#00685d'
   accent: '#26a69a'

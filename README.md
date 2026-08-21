@@ -54,13 +54,13 @@ presets:
 quick_commands:
   - name: Тише
     command: сделай потише
-    icon: −
+    icon: mdi:volume-minus
   - name: Громче
     command: сделай погромче
-    icon: +
+    icon: mdi:volume-plus
   - name: Стоп
     command: останови музыку
-    icon: ■
+    icon: mdi:stop
 
 theme:
   primary: '#00685d'
@@ -86,7 +86,7 @@ presets:
     icon: mdi:playlist-music
 ```
 
-В `presets[].icon` поддерживаются иконки Home Assistant в формате `mdi:name`, например `mdi:music`, `mdi:radio` или `mdi:playlist-music`. Старые текстовые символы (`♫`, `♪`) также работают как fallback.
+В `presets[].icon` и `quick_commands[].icon` поддерживаются иконки Home Assistant в формате `mdi:name`, например `mdi:music`, `mdi:radio`, `mdi:volume-minus` или `mdi:stop`.
 
 Параметр `icon` задаёт иконку Home Assistant рядом с названием станции. По умолчанию используется `mdi:speaker-wireless`.
 
