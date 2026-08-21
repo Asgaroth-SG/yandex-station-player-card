@@ -75,7 +75,7 @@ function o(s, i = "") {
   return typeof s == "string" || typeof s == "number" ? String(s) : i;
 }
 function d(s, i = "ysp-action-icon") {
-  const t = s.trim(), e = /^(mdi|hass):[a-z0-9-]+$/i.test(t) ? t : "mdi:help-circle-outline";
+  const t = s.trim(), e = /^(mdi|hass|yandex):[a-z0-9-]+$/i.test(t) ? t : "mdi:help-circle-outline";
   return `<ha-icon class="ysp-icon ${p(i)}" icon="${p(e)}" aria-hidden="true"></ha-icon>`;
 }
 function R(s) {

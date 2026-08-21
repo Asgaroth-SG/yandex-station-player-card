@@ -1,7 +1,7 @@
 type: custom:yandex-station-player
 entity: media_player.yandex_station_REPLACE_WITH_EXACT_ENTITY
 name: Яндекс.Станция
-icon: mdi:speaker-wireless
+icon: yandex:station-mini
 layout: horizontal
 artwork_position: left
 content_align: left

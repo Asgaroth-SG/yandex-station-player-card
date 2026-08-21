@@ -21,7 +21,7 @@ url: /local/community/yandex-station-player-card/yandex-station-player-card.js
 type: custom:yandex-station-player
 entity: media_player.yandex_station_REPLACE_WITH_EXACT_ENTITY
 name: Яндекс.Станция
-icon: mdi:speaker-wireless
+icon: yandex:station-mini
 
 layout: horizontal
 artwork_position: left
@@ -88,7 +88,7 @@ presets:
 
 В `presets[].icon` и `quick_commands[].icon` поддерживаются иконки Home Assistant в формате `mdi:name`, например `mdi:music`, `mdi:radio`, `mdi:volume-minus` или `mdi:stop`.
 
-Параметр `icon` задаёт иконку Home Assistant рядом с названием станции. По умолчанию используется `mdi:speaker-wireless`.
+Параметр `icon` задаёт иконку Home Assistant рядом с названием станции. Поддерживаются `mdi:*`, `hass:*` и иконки интеграции `yandex:*`, например `yandex:station-mini`. Для отображения `yandex:*` соответствующий набор иконок должен быть установлен и зарегистрирован в Home Assistant; сама карточка передаёт значение в `ha-icon`, но не добавляет набор иконок. Если параметр не задан, используется `mdi:speaker-wireless`.
 
 Команды отправляются через проверенный интеграцией generic action `media_player.play_media`:
 

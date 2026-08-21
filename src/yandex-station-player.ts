@@ -150,7 +150,7 @@ function asText(value: unknown, fallback = ''): string {
 
 function renderHaIcon(icon: string, className = 'ysp-action-icon'): string {
   const normalized = icon.trim();
-  const iconName = /^(mdi|hass):[a-z0-9-]+$/i.test(normalized) ? normalized : 'mdi:help-circle-outline';
+  const iconName = /^(mdi|hass|yandex):[a-z0-9-]+$/i.test(normalized) ? normalized : 'mdi:help-circle-outline';
   return `<ha-icon class="ysp-icon ${escapeHtml(className)}" icon="${escapeHtml(iconName)}" aria-hidden="true"></ha-icon>`;
 }
 
