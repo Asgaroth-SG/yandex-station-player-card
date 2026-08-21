@@ -101,7 +101,7 @@ const CARD_STYLE = `
 .ysp-title { max-width:100%; font:600 20px/28px Manrope, system-ui, sans-serif; }
 .ysp-artist { max-width:100%; color:var(--ysp-secondary); font-size:14px; line-height:20px; }
 .ysp-controls { justify-content:var(--ysp-controls-position); gap:24px; padding:4px 0; }
-.ysp-button { display:inline-flex; align-items:center; justify-content:center; text-align:center; padding:0; line-height:1; width:48px; height:48px; border:0; border-radius:999px; cursor:pointer; color:var(--ysp-primary); background:var(--ysp-surface); font:400 24px/1 system-ui; transition:transform .12s ease, filter .12s ease; }
+.ysp-button { display:inline-flex; align-items:center; justify-content:center; text-align:center; padding:0; line-height:0; width:48px; height:48px; border:0; border-radius:999px; cursor:pointer; color:var(--ysp-primary); background:var(--ysp-surface); font:400 24px/1 system-ui; transition:transform .12s ease, filter .12s ease; }
 .ysp-button:hover { filter:brightness(.97); } .ysp-button:active { transform:scale(.95); }
 .ysp-button:focus-visible, .ysp-chip:focus-visible, .ysp-command:focus-visible, .ysp-preset:focus-visible, input:focus-visible { outline:2px solid var(--ysp-accent); outline-offset:2px; }
 .ysp-button.primary { width:64px; height:64px; color:var(--ysp-on-primary); background:var(--ysp-primary); box-shadow:0 3px 8px rgba(0,105,93,.22); font-size:30px; }
@@ -114,10 +114,11 @@ const CARD_STYLE = `
 .ysp-progress { gap:8px; width:100%; color:var(--ysp-secondary); font-size:11px; }
 .ysp-progress input { min-width:0; flex:1; height:6px; accent-color:var(--ysp-primary); cursor:pointer; }
 .ysp-command-row, .ysp-preset-row { gap:8px; flex-wrap:wrap; }
-.ysp-command, .ysp-preset { min-height:32px; padding:8px 12px; border-radius:999px; background:var(--ysp-surface); color:var(--ysp-primary); font-size:12px; font-weight:600; }
+.ysp-chip, .ysp-command, .ysp-preset { min-height:32px; padding:8px 12px; border-radius:999px; background:var(--ysp-surface); color:var(--ysp-primary); font-size:12px; font-weight:600; line-height:1; }
+.ysp-icon { display:inline-flex; align-items:center; justify-content:center; vertical-align:middle; flex:0 0 auto; line-height:0; }
 .ysp-action-icon { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; flex:0 0 16px; color:currentColor; --mdc-icon-size:16px; }
 .ysp-device-icon { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; flex:0 0 20px; color:var(--ysp-primary); --mdc-icon-size:20px; }
-.ysp-chip-icon { width:16px; height:16px; --mdc-icon-size:16px; }
+.ysp-chip-icon { width:18px; height:18px; --mdc-icon-size:18px; }
 .ysp-label { margin:0 0 8px; color:var(--ysp-secondary); font-size:12px; font-weight:600; }
 .ysp-section { position:relative; }
 .ysp-vertical .ysp-track { flex-direction:column; align-items:stretch; text-align:var(--ysp-align); }
@@ -150,7 +151,7 @@ function asText(value: unknown, fallback = ''): string {
 function renderHaIcon(icon: string, className = 'ysp-action-icon'): string {
   const normalized = icon.trim();
   const iconName = /^(mdi|hass):[a-z0-9-]+$/i.test(normalized) ? normalized : 'mdi:help-circle-outline';
-  return `<ha-icon class="${escapeHtml(className)}" icon="${escapeHtml(iconName)}" aria-hidden="true"></ha-icon>`;
+  return `<ha-icon class="ysp-icon ${escapeHtml(className)}" icon="${escapeHtml(iconName)}" aria-hidden="true"></ha-icon>`;
 }
 
 function renderPresetIcon(icon: string): string {
@@ -280,7 +281,7 @@ class YandexStationPlayerCard extends HTMLElement {
           <section class="ysp-track">${artwork}<div class="ysp-track-info"><div class="ysp-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div><div class="ysp-artist" title="${escapeHtml(artist)}">${escapeHtml(artist)}</div></div></section>
           ${config.show_progress !== false && duration > 0 ? `<section class="ysp-progress" aria-label="Позиция воспроизведения"><span>${formatTime(position)}</span><input type="range" min="0" max="${duration}" step="1" value="${position}" data-action="seek" aria-label="Перемотка"><span>${formatTime(duration)}</span></section>` : ''}
           ${config.show_controls !== false ? `<section class="ysp-controls" aria-label="Управление воспроизведением"><button class="ysp-button" type="button" data-action="previous" aria-label="Предыдущий трек">${renderHaIcon('mdi:skip-previous', 'ysp-control-icon')}</button><button class="ysp-button primary" type="button" data-action="${isPlaying ? 'pause' : 'play'}" aria-label="${isPlaying ? 'Пауза' : 'Воспроизвести'}">${renderHaIcon(isPlaying ? 'mdi:pause' : 'mdi:play', 'ysp-control-icon')}</button><button class="ysp-button" type="button" data-action="next" aria-label="Следующий трек">${renderHaIcon('mdi:skip-next', 'ysp-control-icon')}</button></section>` : ''}
-          ${config.show_volume !== false ? `<section class="ysp-volume" aria-label="Громкость"><span class="ysp-volume-icon">${renderHaIcon(volumeIcon, 'ysp-volume-glyph')}</span><input class="ysp-range" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость"><button class="ysp-chip" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}">${renderHaIcon(muteIcon, 'ysp-chip-icon')}<span>${isMuted ? 'Unmute' : 'Mute'}</span></button></section>` : ''}
+          ${config.show_volume !== false ? `<section class="ysp-volume" aria-label="Громкость"><span class="ysp-volume-icon">${renderHaIcon(volumeIcon, 'ysp-volume-glyph')}</span><input class="ysp-range" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость"><button class="ysp-chip ysp-mute-button" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}">${renderHaIcon(muteIcon, 'ysp-chip-icon')}</button></section>` : ''}
           ${config.show_presets !== false && presets.length > 0 ? `<section class="ysp-section"><p class="ysp-label">Избранное</p><div class="ysp-preset-row">${presets.map((preset, index) => `<button class="ysp-preset" type="button" data-action="preset" data-index="${index}">${renderPresetIcon(preset.icon)}<span>${escapeHtml(preset.name)}</span></button>`).join('')}</div></section>` : ''}
           ${config.show_quick_commands !== false && commands.length > 0 ? `<section class="ysp-section"><p class="ysp-label">Быстрые команды</p><div class="ysp-command-row">${commands.map((command, index) => `<button class="ysp-command" type="button" data-action="command" data-index="${index}">${renderHaIcon(command.icon ?? 'mdi:gesture-tap-button')}<span>${escapeHtml(command.name)}</span></button>`).join('')}</div></section>` : ''}
         </div>
