@@ -1,0 +1,48 @@
+type: custom:yandex-station-player
+entity: media_player.yandex_station_REPLACE_WITH_EXACT_ENTITY
+name: Яндекс.Станция
+layout: horizontal
+artwork_position: left
+content_align: left
+controls_position: center
+artwork_size: 80
+opacity: 0.72
+blur: 18
+volume_on_hover: false
+show_header: true
+show_artwork: true
+show_progress: true
+show_controls: true
+show_volume: true
+show_presets: true
+show_quick_commands: true
+presets:
+  - name: Моя волна
+    command: включи мою волну
+    icon: ♫
+  - name: Радио
+    command: включи радио
+    icon: ◉
+  - name: Музыка
+    command: включи мою музыку
+    icon: ♪
+quick_commands:
+  - name: Тише
+    command: сделай потише
+    icon: −
+  - name: Громче
+    command: сделай погромче
+    icon: +
+  - name: Стоп
+    command: останови музыку
+    icon: ■
+theme:
+  primary: '#00685d'
+  accent: '#26a69a'
+  text: '#0f1e1c'
+  secondary: '#3d4946'
+  surface: '#d5e6e3'
+  background: 'rgba(255,255,255,.72)'
+  on_primary: '#ffffff'
+  border: 'rgba(0,137,123,.15)'
+  shadow: '0 2px 8px rgba(0,137,123,.08)'

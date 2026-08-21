@@ -1,0 +1,323 @@
+interface CustomCardRegistration {
+  type?: string;
+  name?: string;
+  description?: string;
+  preview?: boolean;
+}
+
+type MediaState = {
+  state: string;
+  attributes: Record<string, unknown>;
+};
+
+type HomeAssistant = {
+  states: Record<string, MediaState>;
+  callService: (domain: string, service: string, data: Record<string, unknown>) => Promise<void> | void;
+};
+
+type Preset = {
+  name: string;
+  command?: string;
+  media_content_id?: string;
+  media_content_type?: string;
+  icon?: string;
+};
+
+type QuickCommand = {
+  name: string;
+  command: string;
+  icon?: string;
+};
+
+type CardTheme = Partial<{
+  primary: string;
+  accent: string;
+  text: string;
+  secondary: string;
+  surface: string;
+  background: string;
+  on_primary: string;
+  border: string;
+  shadow: string;
+}>;
+
+type CardConfig = {
+  type: string;
+  entity: string;
+  name?: string;
+  opacity?: number;
+  blur?: number;
+  artwork_size?: number;
+  layout?: 'horizontal' | 'vertical';
+  artwork_position?: 'left' | 'right' | 'top';
+  content_align?: 'left' | 'center' | 'right';
+  controls_position?: 'left' | 'center' | 'right';
+  show_header?: boolean;
+  show_artwork?: boolean;
+  show_progress?: boolean;
+  show_controls?: boolean;
+  show_volume?: boolean;
+  show_presets?: boolean;
+  show_quick_commands?: boolean;
+  volume_on_hover?: boolean;
+  presets?: Preset[];
+  quick_commands?: QuickCommand[];
+  theme?: CardTheme;
+};
+
+type NormalizedPreset = Preset & { icon: string };
+
+const DEFAULT_THEME: Required<CardTheme> = {
+  primary: '#00685d',
+  accent: '#26a69a',
+  text: '#0f1e1c',
+  secondary: '#3d4946',
+  surface: '#ffffff',
+  background: 'rgba(255,255,255,.72)',
+  on_primary: '#ffffff',
+  border: 'rgba(0,137,123,.15)',
+  shadow: '0 2px 8px rgba(0,137,123,.08)',
+};
+
+const CARD_STYLE = `
+:host { display:block; font-family: var(--ysp-body-font, Work Sans, system-ui, sans-serif); color:var(--ysp-text); }
+* { box-sizing:border-box; }
+.ysp-card { position:relative; overflow:hidden; padding:16px; border-radius:16px; background:var(--ysp-background, var(--ha-card-background, #fff)); border:1px solid var(--ysp-border); box-shadow:var(--ysp-shadow); backdrop-filter:blur(var(--ysp-blur)); -webkit-backdrop-filter:blur(var(--ysp-blur)); }
+.ysp-card::before { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(135deg, rgba(255,255,255,.24), transparent 48%); }
+.ysp-content { position:relative; display:flex; flex-direction:column; gap:16px; }
+.ysp-header, .ysp-source, .ysp-track, .ysp-track-info, .ysp-controls, .ysp-volume, .ysp-progress, .ysp-command-row, .ysp-preset-row { display:flex; align-items:center; }
+.ysp-header { justify-content:space-between; gap:12px; min-width:0; }
+.ysp-name, .ysp-title, .ysp-artist { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ysp-name { font-size:14px; line-height:18px; font-weight:600; color:var(--ysp-secondary); }
+.ysp-source, .ysp-chip, .ysp-command, .ysp-preset { border:0; cursor:pointer; font:inherit; }
+.ysp-source, .ysp-chip { gap:6px; padding:6px 10px; border-radius:999px; background:var(--ysp-surface); color:var(--ysp-primary); font-size:12px; font-weight:600; }
+.ysp-source:hover, .ysp-chip:hover, .ysp-command:hover, .ysp-preset:hover { filter:brightness(.97); }
+.ysp-track { gap:16px; min-width:0; }
+.ysp-art { width:var(--ysp-art-size); height:var(--ysp-art-size); flex:0 0 var(--ysp-art-size); object-fit:cover; border-radius:12px; background:var(--ysp-surface); box-shadow:0 2px 6px rgba(0,0,0,.08); }
+.ysp-art-placeholder { display:grid; place-items:center; color:var(--ysp-primary); font-size:30px; }
+.ysp-track-info { min-width:0; flex:1; flex-direction:column; align-items:flex-start; gap:4px; }
+.ysp-title { max-width:100%; font:600 20px/28px Manrope, system-ui, sans-serif; }
+.ysp-artist { max-width:100%; color:var(--ysp-secondary); font-size:14px; line-height:20px; }
+.ysp-controls { justify-content:var(--ysp-controls-position); gap:24px; padding:4px 0; }
+.ysp-button { display:grid; place-items:center; width:48px; height:48px; border:0; border-radius:999px; cursor:pointer; color:var(--ysp-primary); background:var(--ysp-surface); font:400 24px/1 system-ui; transition:transform .12s ease, filter .12s ease; }
+.ysp-button:hover { filter:brightness(.97); } .ysp-button:active { transform:scale(.95); }
+.ysp-button:focus-visible, .ysp-source:focus-visible, .ysp-chip:focus-visible, .ysp-command:focus-visible, .ysp-preset:focus-visible, input:focus-visible { outline:2px solid var(--ysp-accent); outline-offset:2px; }
+.ysp-button.primary { width:64px; height:64px; color:var(--ysp-on-primary); background:var(--ysp-primary); box-shadow:0 3px 8px rgba(0,105,93,.22); font-size:30px; }
+.ysp-volume { gap:8px; width:100%; color:var(--ysp-secondary); }
+.ysp-volume-icon { width:18px; text-align:center; font-size:16px; }
+.ysp-range { min-width:0; flex:1; height:8px; accent-color:var(--ysp-primary); cursor:pointer; }
+.ysp-progress { gap:8px; width:100%; color:var(--ysp-secondary); font-size:11px; }
+.ysp-progress input { min-width:0; flex:1; height:6px; accent-color:var(--ysp-primary); cursor:pointer; }
+.ysp-command-row, .ysp-preset-row { gap:8px; flex-wrap:wrap; }
+.ysp-command, .ysp-preset { padding:8px 12px; border-radius:999px; background:var(--ysp-surface); color:var(--ysp-primary); font-size:12px; font-weight:600; }
+.ysp-label { margin:0 0 8px; color:var(--ysp-secondary); font-size:12px; font-weight:600; }
+.ysp-section { position:relative; }
+.ysp-vertical .ysp-track { flex-direction:column; align-items:stretch; text-align:var(--ysp-align); }
+.ysp-vertical .ysp-track-info { align-items:var(--ysp-align-items); }
+.ysp-art-right .ysp-art { order:2; }
+.ysp-art-top .ysp-track { flex-direction:column; align-items:stretch; }
+.ysp-art-top .ysp-track-info { align-items:var(--ysp-align-items); text-align:var(--ysp-align); }
+.ysp-hover-volume .ysp-volume { position:relative; }
+@media (hover:hover) and (pointer:fine) { .ysp-hover-volume .ysp-range { opacity:0; pointer-events:none; transform:translateY(4px); transition:opacity .12s ease, transform .12s ease; } .ysp-hover-volume .ysp-volume:hover .ysp-range, .ysp-hover-volume .ysp-volume:focus-within .ysp-range { opacity:1; pointer-events:auto; transform:none; } }
+@media (max-width:420px) { .ysp-controls { gap:12px; } .ysp-button.primary { width:56px; height:56px; } }
+`;
+
+function clamp(value: unknown, min: number, max: number, fallback: number): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
+}
+
+function safeCss(value: string, fallback: string): string {
+  return /[<>`{};"']/.test(value) ? fallback : value;
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] ?? character);
+}
+
+function asText(value: unknown, fallback = ''): string {
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : fallback;
+}
+
+function formatTime(value: number): string {
+  if (!Number.isFinite(value) || value < 0) return '0:00';
+  const minutes = Math.floor(value / 60);
+  const seconds = Math.floor(value % 60).toString().padStart(2, '0');
+  return `${minutes}:${seconds}`;
+}
+
+class YandexStationPlayerCard extends HTMLElement {
+  private _config?: CardConfig;
+  private _hass?: HomeAssistant;
+  private _root: ShadowRoot;
+  private _boundClick: (event: Event) => void;
+  private _boundInput: (event: Event) => void;
+
+  constructor() {
+    super();
+    this._root = this.attachShadow({ mode: 'open' });
+    this._boundClick = (event) => this.handleClick(event);
+    this._boundInput = (event) => this.handleInput(event);
+  }
+
+  setConfig(config: CardConfig): void {
+    if (!config || typeof config.entity !== 'string' || !config.entity.includes('.')) {
+      throw new Error('Yandex Station Player: укажите точный entity, например media_player.yandex_station_...');
+    }
+    if (!config.entity.startsWith('media_player.')) {
+      throw new Error('Yandex Station Player: entity должен принадлежать домену media_player.');
+    }
+    this._config = { ...config };
+    this.render();
+  }
+
+  set hass(value: HomeAssistant) {
+    this._hass = value;
+    this.render();
+  }
+
+  getCardSize(): number {
+    return 5;
+  }
+
+  connectedCallback(): void {
+    this._root.addEventListener('click', this._boundClick);
+    this._root.addEventListener('input', this._boundInput);
+  }
+
+  disconnectedCallback(): void {
+    this._root.removeEventListener('click', this._boundClick);
+    this._root.removeEventListener('input', this._boundInput);
+  }
+
+  private config(): CardConfig {
+    return this._config ?? { type: 'custom:yandex-station-player', entity: '' };
+  }
+
+  private mediaState(): MediaState | undefined {
+    return this._hass?.states[this.config().entity];
+  }
+
+  private mergedTheme(): Required<CardTheme> {
+    const configTheme = this.config().theme ?? {};
+    return { ...DEFAULT_THEME, ...configTheme };
+  }
+
+  private normalizedPresets(): NormalizedPreset[] {
+    const presets: Preset[] = Array.isArray(this.config().presets) ? this.config().presets ?? [] : [];
+    return presets.filter((preset): preset is Preset => {
+      if (!preset || typeof preset.name !== 'string') return false;
+      return typeof preset.command === 'string' || typeof preset.media_content_id === 'string';
+    }).map((preset) => ({ ...preset, icon: typeof preset.icon === 'string' ? preset.icon : '♫' }));
+  }
+
+  private normalizedCommands(): QuickCommand[] {
+    const commands: QuickCommand[] = Array.isArray(this.config().quick_commands) ? this.config().quick_commands ?? [] : [];
+    return commands.filter((item): item is QuickCommand => Boolean(item && typeof item.name === 'string' && typeof item.command === 'string'));
+  }
+
+  private render(): void {
+    if (!this._config) return;
+    const config = this.config();
+    const state = this.mediaState();
+    const attributes = state?.attributes ?? {};
+    const theme = this.mergedTheme();
+    const volume = clamp(attributes.volume_level, 0, 1, 0.5);
+    const position = clamp(attributes.media_position, 0, Number(attributes.media_duration) || 1, 0);
+    const duration = Math.max(0, Number(attributes.media_duration) || 0);
+    const title = asText(attributes.media_title, state ? 'Ничего не играет' : 'Ожидание данных');
+    const artist = asText(attributes.media_artist || attributes.media_album_name, state?.state === 'unavailable' ? 'Устройство недоступно' : 'Яндекс.Станция');
+    const picture = asText(attributes.entity_picture);
+    const artworkSize = clamp(config.artwork_size, 48, 220, 80);
+    const opacity = clamp(config.opacity, 0.1, 1, 0.72);
+    const blur = clamp(config.blur, 0, 40, 18);
+    const align = config.content_align === 'center' ? 'center' : config.content_align === 'right' ? 'right' : 'left';
+    const alignItems = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
+    const controlsPosition = config.controls_position === 'left' ? 'flex-start' : config.controls_position === 'right' ? 'flex-end' : 'center';
+    const layout = config.layout === 'vertical' ? 'ysp-vertical' : '';
+    const artworkPosition = config.artwork_position === 'right' ? 'ysp-art-right' : config.artwork_position === 'top' ? 'ysp-art-top' : '';
+    const hoverVolume = config.volume_on_hover === true ? 'ysp-hover-volume' : '';
+    const unavailable = state?.state === 'unavailable' || !state;
+    const isPlaying = state?.state === 'playing';
+    const isMuted = attributes.is_volume_muted === true || volume === 0;
+    const presets = this.normalizedPresets();
+    const commands = this.normalizedCommands();
+
+    const styles = `
+      ${CARD_STYLE}
+      :host { --ysp-primary:${safeCss(asText(theme.primary), DEFAULT_THEME.primary)}; --ysp-accent:${safeCss(asText(theme.accent), DEFAULT_THEME.accent)}; --ysp-text:${safeCss(asText(theme.text), DEFAULT_THEME.text)}; --ysp-secondary:${safeCss(asText(theme.secondary), DEFAULT_THEME.secondary)}; --ysp-surface:${safeCss(asText(theme.surface), DEFAULT_THEME.surface)}; --ysp-background:${safeCss(asText(theme.background), DEFAULT_THEME.background)}; --ysp-on-primary:${safeCss(asText(theme.on_primary), DEFAULT_THEME.on_primary)}; --ysp-border:${safeCss(asText(theme.border), DEFAULT_THEME.border)}; --ysp-shadow:${safeCss(asText(theme.shadow), DEFAULT_THEME.shadow)}; --ysp-art-size:${artworkSize}px; --ysp-blur:${blur}px; --ysp-controls-position:${controlsPosition}; --ysp-align:${align}; --ysp-align-items:${alignItems}; }
+      .ysp-card { opacity:${opacity}; }
+    `;
+    const artwork = config.show_artwork === false ? '' : picture
+      ? `<img class="ysp-art" src="${escapeHtml(picture)}" alt="Обложка текущего трека">`
+      : '<div class="ysp-art ysp-art-placeholder" aria-label="Нет обложки">♫</div>';
+
+    this._root.innerHTML = `
+      <style>${styles}</style>
+      <article class="ysp-card ${layout} ${artworkPosition} ${hoverVolume}" aria-label="${escapeHtml(config.name ?? 'Яндекс.Станция')}" data-unavailable="${unavailable}">
+        <div class="ysp-content">
+          ${config.show_header !== false ? `<header class="ysp-header"><span class="ysp-name">${escapeHtml(config.name ?? 'Яндекс.Станция')}</span><button class="ysp-source" type="button" data-action="more-info" aria-label="Открыть информацию">${escapeHtml(asText(attributes.source, 'Яндекс Музыка'))}⌄</button></header>` : ''}
+          <section class="ysp-track">${artwork}<div class="ysp-track-info"><div class="ysp-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div><div class="ysp-artist" title="${escapeHtml(artist)}">${escapeHtml(artist)}</div></div></section>
+          ${config.show_progress !== false && duration > 0 ? `<section class="ysp-progress" aria-label="Позиция воспроизведения"><span>${formatTime(position)}</span><input type="range" min="0" max="${duration}" step="1" value="${position}" data-action="seek" aria-label="Перемотка"><span>${formatTime(duration)}</span></section>` : ''}
+          ${config.show_controls !== false ? `<section class="ysp-controls" aria-label="Управление воспроизведением"><button class="ysp-button" type="button" data-action="previous" aria-label="Предыдущий трек">⏮</button><button class="ysp-button primary" type="button" data-action="${isPlaying ? 'pause' : 'play'}" aria-label="${isPlaying ? 'Пауза' : 'Воспроизвести'}">${isPlaying ? 'Ⅱ' : '▶'}</button><button class="ysp-button" type="button" data-action="next" aria-label="Следующий трек">⏭</button></section>` : ''}
+          ${config.show_volume !== false ? `<section class="ysp-volume" aria-label="Громкость"><span class="ysp-volume-icon">${isMuted ? '🔇' : '🔊'}</span><input class="ysp-range" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость"><button class="ysp-chip" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}">${isMuted ? 'Звук' : 'Mute'}</button></section>` : ''}
+          ${config.show_presets !== false && presets.length > 0 ? `<section class="ysp-section"><p class="ysp-label">Избранное</p><div class="ysp-preset-row">${presets.map((preset, index) => `<button class="ysp-preset" type="button" data-action="preset" data-index="${index}">${escapeHtml(preset.icon)} ${escapeHtml(preset.name)}</button>`).join('')}</div></section>` : ''}
+          ${config.show_quick_commands !== false && commands.length > 0 ? `<section class="ysp-section"><p class="ysp-label">Быстрые команды</p><div class="ysp-command-row">${commands.map((command, index) => `<button class="ysp-command" type="button" data-action="command" data-index="${index}">${escapeHtml(command.icon ?? '•')} ${escapeHtml(command.name)}</button>`).join('')}</div></section>` : ''}
+        </div>
+      </article>
+    `;
+  }
+
+  private call(service: string, data: Record<string, unknown> = {}): void {
+    if (!this._hass || !this._config) return;
+    void this._hass.callService('media_player', service, { entity_id: this._config.entity, ...data });
+  }
+
+  private handleClick(event: Event): void {
+    const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-action]') : null;
+    if (!target) return;
+    const action = target.dataset.action;
+    if (action === 'more-info') {
+      this.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: this.config().entity } }));
+      return;
+    }
+    if (action === 'play') this.call('media_play');
+    if (action === 'pause') this.call('media_pause');
+    if (action === 'previous') this.call('media_previous_track');
+    if (action === 'next') this.call('media_next_track');
+    if (action === 'mute') this.call('volume_mute', { is_volume_muted: !(this.mediaState()?.attributes.is_volume_muted === true) });
+    if (action === 'command') {
+      const item = this.normalizedCommands()[Number(target.dataset.index)];
+      if (item) this.call('play_media', { media_content_id: item.command, media_content_type: 'command' });
+    }
+    if (action === 'preset') {
+      const item = this.normalizedPresets()[Number(target.dataset.index)];
+      if (!item) return;
+      this.call('play_media', {
+        media_content_id: item.command ?? item.media_content_id,
+        media_content_type: item.command ? 'text' : (item.media_content_type ?? 'music'),
+      });
+    }
+  }
+
+  private handleInput(event: Event): void {
+    const target = event.target instanceof HTMLInputElement ? event.target : null;
+    if (!target) return;
+    if (target.dataset.action === 'volume') this.call('volume_set', { volume_level: Number(target.value) });
+    if (target.dataset.action === 'seek') this.call('media_seek', { seek_position: Number(target.value) });
+  }
+}
+
+if (!customElements.get('yandex-station-player')) {
+  customElements.define('yandex-station-player', YandexStationPlayerCard);
+}
+
+const cards = ((window as Window & { customCards?: CustomCardRegistration[] }).customCards ??= []);
+if (!cards.some((card) => card.type === 'yandex-station-player')) {
+  cards.push({
+    type: 'yandex-station-player',
+    name: 'Yandex Station Player',
+    description: 'Mint Teal media player for Yandex.Station media_player entities',
+    preview: true,
+  });
+}
