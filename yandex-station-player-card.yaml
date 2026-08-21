@@ -1,6 +1,7 @@
 type: custom:yandex-station-player
 entity: media_player.yandex_station_REPLACE_WITH_EXACT_ENTITY
 name: Яндекс.Станция
+icon: mdi:speaker-wireless
 layout: horizontal
 artwork_position: left
 content_align: left
@@ -19,13 +20,13 @@ show_quick_commands: true
 presets:
   - name: Моя волна
     command: включи мою волну
-    icon: ♫
+    icon: mdi:radio
   - name: Радио
     command: включи радио
-    icon: ◉
+    icon: mdi:radio-tower
   - name: Музыка
     command: включи мою музыку
-    icon: ♪
+    icon: mdi:music
 quick_commands:
   - name: Тише
     command: сделай потише

@@ -21,6 +21,7 @@ url: /local/community/yandex-station-player-card/yandex-station-player-card.js
 type: custom:yandex-station-player
 entity: media_player.yandex_station_REPLACE_WITH_EXACT_ENTITY
 name: Яндекс.Станция
+icon: mdi:speaker-wireless
 
 layout: horizontal
 artwork_position: left
@@ -42,13 +43,13 @@ show_quick_commands: true
 presets:
   - name: Моя волна
     command: включи мою волну
-    icon: ♫
+    icon: mdi:radio
   - name: Радио
     command: включи радио
-    icon: ◉
+    icon: mdi:radio-tower
   - name: Музыка
     command: включи мою музыку
-    icon: ♪
+    icon: mdi:music
 
 quick_commands:
   - name: Тише
@@ -82,8 +83,12 @@ presets:
   - name: Плейлист
     media_content_id: '60062'
     media_content_type: playlist
-    icon: ♪
+    icon: mdi:playlist-music
 ```
+
+В `presets[].icon` поддерживаются иконки Home Assistant в формате `mdi:name`, например `mdi:music`, `mdi:radio` или `mdi:playlist-music`. Старые текстовые символы (`♫`, `♪`) также работают как fallback.
+
+Параметр `icon` задаёт иконку Home Assistant рядом с названием станции. По умолчанию используется `mdi:speaker-wireless`.
 
 Команды отправляются через проверенный интеграцией generic action `media_player.play_media`:
 
