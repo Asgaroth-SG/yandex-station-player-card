@@ -124,8 +124,8 @@ const CARD_STYLE = `
 .ysp-volume-vertical { align-self:center; width:14px; height:80px; margin:0; padding:0; background:transparent; cursor:pointer; writing-mode:vertical-lr; -webkit-appearance:slider-vertical; appearance:slider-vertical; accent-color:var(--ysp-primary); }
 .ysp-volume-vertical::-webkit-slider-runnable-track { width:8px; border-radius:999px; background:linear-gradient(to top, var(--ysp-primary) 0 var(--ysp-volume-pct, 0%), var(--ysp-surface) var(--ysp-volume-pct, 0%) 100%); }
 .ysp-volume-vertical::-moz-range-track { width:8px; border-radius:999px; background:linear-gradient(to top, var(--ysp-primary) 0 var(--ysp-volume-pct, 0%), var(--ysp-surface) var(--ysp-volume-pct, 0%) 100%); }
-.ysp-volume-vertical::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px; margin:0; border-radius:999px; background:var(--ysp-primary); border:0; }
-.ysp-volume-vertical::-moz-range-thumb { width:14px; height:14px; border:0; border-radius:999px; background:var(--ysp-primary); }
+.ysp-volume-vertical::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:0; height:0; margin:0; border:0; background:transparent; }
+.ysp-volume-vertical::-moz-range-thumb { width:0; height:0; border:0; background:transparent; }
 
 .ysp-command-row, .ysp-preset-row { gap:8px; flex-wrap:wrap; }
 .ysp-chip, .ysp-command, .ysp-preset { min-height:32px; padding:8px 12px; border-radius:999px; background:var(--ysp-surface); color:var(--ysp-primary); font-size:12px; font-weight:600; line-height:1; }
