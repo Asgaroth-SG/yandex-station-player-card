@@ -122,6 +122,7 @@ const CARD_STYLE = `
 .ysp-progress .ysp-volume-popover { position:absolute; bottom:calc(100% + 6px); left:50%; transform:translate(-50%, 6px); display:flex; align-items:center; justify-content:center; padding:14px 10px; border-radius:12px; background:var(--ysp-background, var(--ha-card-background, #fff)); border:1px solid var(--ysp-border); box-shadow:var(--ysp-shadow); opacity:0; pointer-events:none; transition:opacity .14s ease, transform .14s ease; }
 .ysp-progress .ysp-volume-side:hover .ysp-volume-popover, .ysp-progress .ysp-volume-side:focus-within .ysp-volume-popover, .ysp-progress .ysp-volume-side:has(.ysp-volume-vertical:active) .ysp-volume-popover, .ysp-progress .ysp-volume-popover:hover, .ysp-progress .ysp-volume-popover:focus-within, .ysp-card.ysp-volume-interacting .ysp-volume-popover { opacity:1; pointer-events:auto; transform:translate(-50%, 0); }
 .ysp-volume-vertical { align-self:center; width:32px; height:80px; margin:0; padding:0; border:0; background:linear-gradient(to top, var(--ysp-primary) 0 var(--ysp-volume-pct, 0%), var(--ysp-surface) var(--ysp-volume-pct, 0%)) center / 8px 100% no-repeat; border-radius:999px; cursor:pointer; writing-mode:vertical-lr; direction:rtl; -webkit-appearance:none; appearance:none; transition:filter .18s ease, transform .18s ease; }
+.ysp-volume-vertical { touch-action:none; }
 .ysp-volume-vertical:hover { filter:brightness(1.08); }
 .ysp-volume-vertical:active { transform:scaleX(1.08); }
 .ysp-volume-vertical::-webkit-slider-runnable-track { width:8px; height:80px; border:0; border-radius:999px; background:transparent; }
@@ -197,6 +198,7 @@ class YandexStationPlayerCard extends HTMLElement {
   private _boundClick: (event: Event) => void;
   private _boundInput: (event: Event) => void;
   private _boundPointerDown: (event: Event) => void;
+  private _boundPointerMove: (event: Event) => void;
   private _boundPointerUp: (event: Event) => void;
   private _volumeInteracting = false;
 
@@ -206,6 +208,7 @@ class YandexStationPlayerCard extends HTMLElement {
     this._boundClick = (event) => this.handleClick(event);
     this._boundInput = (event) => this.handleInput(event);
     this._boundPointerDown = (event) => this.handleVolumePointerDown(event);
+    this._boundPointerMove = (event) => this.handleVolumePointerMove(event);
     this._boundPointerUp = () => this.handleVolumePointerUp();
   }
 
@@ -233,6 +236,7 @@ class YandexStationPlayerCard extends HTMLElement {
     this._root.addEventListener('click', this._boundClick);
     this._root.addEventListener('input', this._boundInput);
     this._root.addEventListener('pointerdown', this._boundPointerDown);
+    this._root.addEventListener('pointermove', this._boundPointerMove);
     this._root.addEventListener('pointerup', this._boundPointerUp);
     this._root.addEventListener('pointercancel', this._boundPointerUp);
   }
@@ -241,6 +245,7 @@ class YandexStationPlayerCard extends HTMLElement {
     this._root.removeEventListener('click', this._boundClick);
     this._root.removeEventListener('input', this._boundInput);
     this._root.removeEventListener('pointerdown', this._boundPointerDown);
+    this._root.removeEventListener('pointermove', this._boundPointerMove);
     this._root.removeEventListener('pointerup', this._boundPointerUp);
     this._root.removeEventListener('pointercancel', this._boundPointerUp);
   }
@@ -387,7 +392,21 @@ class YandexStationPlayerCard extends HTMLElement {
     if (event.target instanceof HTMLInputElement && event.target.dataset.action === 'volume') {
       this._volumeInteracting = true;
       this._root.querySelector<HTMLElement>('.ysp-card')?.classList.add('ysp-volume-interacting');
+      event.target.setPointerCapture((event as PointerEvent).pointerId);
+      this.setVolumeFromPointer(event.target, event as PointerEvent);
     }
+  }
+
+  private handleVolumePointerMove(event: Event): void {
+    if (!this._volumeInteracting || !(event.target instanceof HTMLInputElement) || event.target.dataset.action !== 'volume') return;
+    this.setVolumeFromPointer(event.target, event as PointerEvent);
+  }
+
+  private setVolumeFromPointer(target: HTMLInputElement, event: PointerEvent): void {
+    const bounds = target.getBoundingClientRect();
+    const value = clamp(bounds.height > 0 ? (bounds.bottom - event.clientY) / bounds.height : 0, 0, 1, 0);
+    target.value = value.toFixed(2);
+    this.handleInput({ target } as unknown as Event);
   }
 
   private handleVolumePointerUp(): void {

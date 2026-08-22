@@ -1,7 +1,7 @@
-var F = Object.defineProperty;
-var V = (s, i, e) => i in s ? F(s, i, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[i] = e;
-var y = (s, i, e) => V(s, typeof i != "symbol" ? i + "" : i, e);
-const l = {
+var Y = Object.defineProperty;
+var q = (s, o, t) => o in s ? Y(s, o, { enumerable: !0, configurable: !0, writable: !0, value: t }) : s[o] = t;
+var l = (s, o, t) => q(s, typeof o != "symbol" ? o + "" : o, t);
+const d = {
   primary: "#00685d",
   accent: "#26a69a",
   text: "#0f1e1c",
@@ -53,6 +53,7 @@ const l = {
 .ysp-progress .ysp-volume-popover { position:absolute; bottom:calc(100% + 6px); left:50%; transform:translate(-50%, 6px); display:flex; align-items:center; justify-content:center; padding:14px 10px; border-radius:12px; background:var(--ysp-background, var(--ha-card-background, #fff)); border:1px solid var(--ysp-border); box-shadow:var(--ysp-shadow); opacity:0; pointer-events:none; transition:opacity .14s ease, transform .14s ease; }
 .ysp-progress .ysp-volume-side:hover .ysp-volume-popover, .ysp-progress .ysp-volume-side:focus-within .ysp-volume-popover, .ysp-progress .ysp-volume-side:has(.ysp-volume-vertical:active) .ysp-volume-popover, .ysp-progress .ysp-volume-popover:hover, .ysp-progress .ysp-volume-popover:focus-within, .ysp-card.ysp-volume-interacting .ysp-volume-popover { opacity:1; pointer-events:auto; transform:translate(-50%, 0); }
 .ysp-volume-vertical { align-self:center; width:32px; height:80px; margin:0; padding:0; border:0; background:linear-gradient(to top, var(--ysp-primary) 0 var(--ysp-volume-pct, 0%), var(--ysp-surface) var(--ysp-volume-pct, 0%)) center / 8px 100% no-repeat; border-radius:999px; cursor:pointer; writing-mode:vertical-lr; direction:rtl; -webkit-appearance:none; appearance:none; transition:filter .18s ease, transform .18s ease; }
+.ysp-volume-vertical { touch-action:none; }
 .ysp-volume-vertical:hover { filter:brightness(1.08); }
 .ysp-volume-vertical:active { transform:scaleX(1.08); }
 .ysp-volume-vertical::-webkit-slider-runnable-track { width:8px; height:80px; border:0; border-radius:999px; background:transparent; }
@@ -75,149 +76,157 @@ const l = {
 .ysp-art-top .ysp-track-info { align-items:var(--ysp-align-items); text-align:var(--ysp-align); }
 @media (max-width:420px) { .ysp-controls { gap:12px; } .ysp-button.primary { width:56px; height:56px; } .ysp-progress .ysp-volume-side .ysp-range { width:60px; flex:0 0 60px; } }
 `;
-function v(s, i, e, t) {
-  const n = typeof s == "number" ? s : Number(s);
-  return Number.isFinite(n) ? Math.min(e, Math.max(i, n)) : t;
+function h(s, o, t, e) {
+  const i = typeof s == "number" ? s : Number(s);
+  return Number.isFinite(i) ? Math.min(t, Math.max(o, i)) : e;
 }
-function u(s, i) {
-  return /[<>`{};"']/.test(s) ? i : s;
+function y(s, o) {
+  return /[<>`{};"']/.test(s) ? o : s;
 }
 function p(s) {
-  return s.replace(/[&<>"']/g, (i) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[i] ?? i);
+  return s.replace(/[&<>"']/g, (o) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[o] ?? o);
 }
-function r(s, i = "") {
-  return typeof s == "string" || typeof s == "number" ? String(s) : i;
+function a(s, o = "") {
+  return typeof s == "string" || typeof s == "number" ? String(s) : o;
 }
-function d(s, i = "ysp-action-icon") {
-  const e = s.trim(), t = /^(mdi|hass|yandex):[a-z0-9-]+$/i.test(e) ? e : "mdi:help-circle-outline";
-  return `<ha-icon class="ysp-icon ${p(i)}" icon="${p(t)}" aria-hidden="true"></ha-icon>`;
+function u(s, o = "ysp-action-icon") {
+  const t = s.trim(), e = /^(mdi|hass|yandex):[a-z0-9-]+$/i.test(t) ? t : "mdi:help-circle-outline";
+  return `<ha-icon class="ysp-icon ${p(o)}" icon="${p(e)}" aria-hidden="true"></ha-icon>`;
 }
 function R(s) {
-  return d(s);
+  return u(s);
 }
-function h(s) {
+function g(s) {
   if (!Number.isFinite(s) || s < 0) return "0:00";
-  const i = Math.floor(s / 60), e = Math.floor(s % 60).toString().padStart(2, "0");
-  return `${i}:${e}`;
+  const o = Math.floor(s / 60), t = Math.floor(s % 60).toString().padStart(2, "0");
+  return `${o}:${t}`;
 }
-function W(s, i, e) {
-  const t = Math.max(0, Number(s.media_position) || 0);
-  if (i !== "playing" || e <= 0) return Math.min(t, e);
-  const n = r(s.media_position_updated_at), a = Date.parse(n);
-  return Number.isFinite(a) ? Math.min(e, t + Math.max(0, (Date.now() - a) / 1e3)) : Math.min(t, e);
+function W(s, o, t) {
+  const e = Math.max(0, Number(s.media_position) || 0);
+  if (o !== "playing" || t <= 0) return Math.min(e, t);
+  const i = a(s.media_position_updated_at), r = Date.parse(i);
+  return Number.isFinite(r) ? Math.min(t, e + Math.max(0, (Date.now() - r) / 1e3)) : Math.min(e, t);
 }
 class X extends HTMLElement {
   constructor() {
     super();
-    y(this, "_config");
-    y(this, "_hass");
-    y(this, "_root");
-    y(this, "_boundClick");
-    y(this, "_boundInput");
-    y(this, "_boundPointerDown");
-    y(this, "_boundPointerUp");
-    y(this, "_volumeInteracting", !1);
-    this._root = this.attachShadow({ mode: "open" }), this._boundClick = (e) => this.handleClick(e), this._boundInput = (e) => this.handleInput(e), this._boundPointerDown = (e) => this.handleVolumePointerDown(e), this._boundPointerUp = () => this.handleVolumePointerUp();
+    l(this, "_config");
+    l(this, "_hass");
+    l(this, "_root");
+    l(this, "_boundClick");
+    l(this, "_boundInput");
+    l(this, "_boundPointerDown");
+    l(this, "_boundPointerMove");
+    l(this, "_boundPointerUp");
+    l(this, "_volumeInteracting", !1);
+    this._root = this.attachShadow({ mode: "open" }), this._boundClick = (t) => this.handleClick(t), this._boundInput = (t) => this.handleInput(t), this._boundPointerDown = (t) => this.handleVolumePointerDown(t), this._boundPointerMove = (t) => this.handleVolumePointerMove(t), this._boundPointerUp = () => this.handleVolumePointerUp();
   }
-  setConfig(e) {
-    if (!e || typeof e.entity != "string" || !e.entity.includes("."))
+  setConfig(t) {
+    if (!t || typeof t.entity != "string" || !t.entity.includes("."))
       throw new Error("Yandex Station Player: укажите точный entity, например media_player.yandex_station_...");
-    if (!e.entity.startsWith("media_player."))
+    if (!t.entity.startsWith("media_player."))
       throw new Error("Yandex Station Player: entity должен принадлежать домену media_player.");
-    this._config = { ...e }, this.render();
+    this._config = { ...t }, this.render();
   }
-  set hass(e) {
-    this._hass = e, this.render();
+  set hass(t) {
+    this._hass = t, this.render();
   }
   getCardSize() {
     return 5;
   }
   connectedCallback() {
-    this._root.addEventListener("click", this._boundClick), this._root.addEventListener("input", this._boundInput), this._root.addEventListener("pointerdown", this._boundPointerDown), this._root.addEventListener("pointerup", this._boundPointerUp), this._root.addEventListener("pointercancel", this._boundPointerUp);
+    this._root.addEventListener("click", this._boundClick), this._root.addEventListener("input", this._boundInput), this._root.addEventListener("pointerdown", this._boundPointerDown), this._root.addEventListener("pointermove", this._boundPointerMove), this._root.addEventListener("pointerup", this._boundPointerUp), this._root.addEventListener("pointercancel", this._boundPointerUp);
   }
   disconnectedCallback() {
-    this._root.removeEventListener("click", this._boundClick), this._root.removeEventListener("input", this._boundInput), this._root.removeEventListener("pointerdown", this._boundPointerDown), this._root.removeEventListener("pointerup", this._boundPointerUp), this._root.removeEventListener("pointercancel", this._boundPointerUp);
+    this._root.removeEventListener("click", this._boundClick), this._root.removeEventListener("input", this._boundInput), this._root.removeEventListener("pointerdown", this._boundPointerDown), this._root.removeEventListener("pointermove", this._boundPointerMove), this._root.removeEventListener("pointerup", this._boundPointerUp), this._root.removeEventListener("pointercancel", this._boundPointerUp);
   }
   config() {
     return this._config ?? { type: "custom:yandex-station-player", entity: "" };
   }
   mediaState() {
-    var e;
-    return (e = this._hass) == null ? void 0 : e.states[this.config().entity];
+    var t;
+    return (t = this._hass) == null ? void 0 : t.states[this.config().entity];
   }
   mergedTheme() {
-    const e = this.config().theme ?? {};
-    return { ...l, ...e };
+    const t = this.config().theme ?? {};
+    return { ...d, ...t };
   }
   normalizedPresets() {
-    return (Array.isArray(this.config().presets) ? this.config().presets ?? [] : []).filter((t) => !t || typeof t.name != "string" ? !1 : typeof t.command == "string" || typeof t.media_content_id == "string").map((t) => ({ ...t, icon: typeof t.icon == "string" ? t.icon : "mdi:music-note" }));
+    return (Array.isArray(this.config().presets) ? this.config().presets ?? [] : []).filter((e) => !e || typeof e.name != "string" ? !1 : typeof e.command == "string" || typeof e.media_content_id == "string").map((e) => ({ ...e, icon: typeof e.icon == "string" ? e.icon : "mdi:music-note" }));
   }
   normalizedCommands() {
-    return (Array.isArray(this.config().quick_commands) ? this.config().quick_commands ?? [] : []).filter((t) => !!(t && typeof t.name == "string" && typeof t.command == "string"));
+    return (Array.isArray(this.config().quick_commands) ? this.config().quick_commands ?? [] : []).filter((e) => !!(e && typeof e.name == "string" && typeof e.command == "string"));
   }
   render() {
     if (!this._config) return;
-    const e = this.config(), t = this.mediaState(), n = (t == null ? void 0 : t.attributes) ?? {}, a = this.mergedTheme(), o = v(n.volume_level, 0, 1, 0.5), c = Math.max(0, Number(n.media_duration) || 0), m = W(n, t == null ? void 0 : t.state, c), C = c > 0 ? Math.round(m / c * 1e3) / 10 : 0, w = r(n.media_title, t ? "Ничего не играет" : "Ожидание данных"), k = r(n.media_artist || n.media_album_name, (t == null ? void 0 : t.state) === "unavailable" ? "Устройство недоступно" : "Яндекс.Станция"), $ = r(n.entity_picture), I = v(e.artwork_size, 48, 220, 80), L = v(e.opacity, 0.1, 1, 0.72), N = v(e.blur, 0, 40, 18), b = e.content_align === "center" ? "center" : e.content_align === "right" ? "right" : "left", S = b === "center" ? "center" : b === "right" ? "flex-end" : "flex-start", T = e.controls_position === "left" ? "flex-start" : e.controls_position === "right" ? "flex-end" : "center", j = e.layout === "vertical" ? "ysp-vertical" : "", A = e.artwork_position === "right" ? "ysp-art-right" : e.artwork_position === "top" ? "ysp-art-top" : "", D = "", U = (t == null ? void 0 : t.state) === "unavailable" || !t, x = (t == null ? void 0 : t.state) === "playing", f = n.is_volume_muted === !0 || o === 0, z = f ? "mdi:volume-off" : "mdi:volume-high", H = f ? "mdi:volume-high" : "mdi:volume-mute", P = this.normalizedPresets(), M = this.normalizedCommands(), Y = `
+    const t = this.config(), e = this.mediaState(), i = (e == null ? void 0 : e.attributes) ?? {}, r = this.mergedTheme(), n = h(i.volume_level, 0, 1, 0.5), c = Math.max(0, Number(i.media_duration) || 0), m = W(i, e == null ? void 0 : e.state, c), I = c > 0 ? Math.round(m / c * 1e3) / 10 : 0, w = a(i.media_title, e ? "Ничего не играет" : "Ожидание данных"), k = a(i.media_artist || i.media_album_name, (e == null ? void 0 : e.state) === "unavailable" ? "Устройство недоступно" : "Яндекс.Станция"), $ = a(i.entity_picture), L = h(t.artwork_size, 48, 220, 80), C = h(t.opacity, 0.1, 1, 0.72), N = h(t.blur, 0, 40, 18), b = t.content_align === "center" ? "center" : t.content_align === "right" ? "right" : "left", S = b === "center" ? "center" : b === "right" ? "flex-end" : "flex-start", T = t.controls_position === "left" ? "flex-start" : t.controls_position === "right" ? "flex-end" : "center", j = t.layout === "vertical" ? "ysp-vertical" : "", A = t.artwork_position === "right" ? "ysp-art-right" : t.artwork_position === "top" ? "ysp-art-top" : "", D = "", V = (e == null ? void 0 : e.state) === "unavailable" || !e, x = (e == null ? void 0 : e.state) === "playing", f = i.is_volume_muted === !0 || n === 0, P = f ? "mdi:volume-off" : "mdi:volume-high", F = f ? "mdi:volume-high" : "mdi:volume-mute", M = this.normalizedPresets(), z = this.normalizedCommands(), H = `
       ${B}
-      :host { --ysp-primary:${u(r(a.primary), l.primary)}; --ysp-accent:${u(r(a.accent), l.accent)}; --ysp-text:${u(r(a.text), l.text)}; --ysp-secondary:${u(r(a.secondary), l.secondary)}; --ysp-surface:${u(r(a.surface), l.surface)}; --ysp-background:${u(r(a.background), l.background)}; --ysp-on-primary:${u(r(a.on_primary), l.on_primary)}; --ysp-border:${u(r(a.border), l.border)}; --ysp-shadow:${u(r(a.shadow), l.shadow)}; --ysp-art-size:${I}px; --ysp-blur:${N}px; --ysp-controls-position:${T}; --ysp-align:${b}; --ysp-align-items:${S}; }
-      .ysp-card { opacity:${L}; }
-    `, q = e.show_artwork === !1 ? "" : $ ? `<img class="ysp-art" src="${p($)}" alt="Обложка текущего трека">` : `<div class="ysp-art ysp-art-placeholder" aria-label="Нет обложки">${d("mdi:music-note", "ysp-art-icon")}</div>`;
+      :host { --ysp-primary:${y(a(r.primary), d.primary)}; --ysp-accent:${y(a(r.accent), d.accent)}; --ysp-text:${y(a(r.text), d.text)}; --ysp-secondary:${y(a(r.secondary), d.secondary)}; --ysp-surface:${y(a(r.surface), d.surface)}; --ysp-background:${y(a(r.background), d.background)}; --ysp-on-primary:${y(a(r.on_primary), d.on_primary)}; --ysp-border:${y(a(r.border), d.border)}; --ysp-shadow:${y(a(r.shadow), d.shadow)}; --ysp-art-size:${L}px; --ysp-blur:${N}px; --ysp-controls-position:${T}; --ysp-align:${b}; --ysp-align-items:${S}; }
+      .ysp-card { opacity:${C}; }
+    `, U = t.show_artwork === !1 ? "" : $ ? `<img class="ysp-art" src="${p($)}" alt="Обложка текущего трека">` : `<div class="ysp-art ysp-art-placeholder" aria-label="Нет обложки">${u("mdi:music-note", "ysp-art-icon")}</div>`;
     this._root.innerHTML = `
-      <style>${Y}</style>
-      <article class="ysp-card ${j} ${A} ${D} ${this._volumeInteracting ? "ysp-volume-interacting" : ""}" aria-label="${p(e.name ?? "Яндекс.Станция")}" data-unavailable="${U}">
+      <style>${H}</style>
+      <article class="ysp-card ${j} ${A} ${D} ${this._volumeInteracting ? "ysp-volume-interacting" : ""}" aria-label="${p(t.name ?? "Яндекс.Станция")}" data-unavailable="${V}">
         <div class="ysp-content">
-          ${e.show_header !== !1 ? `<header class="ysp-header">${d(e.icon ?? "mdi:speaker-wireless", "ysp-device-icon")}<span class="ysp-name">${p(e.name ?? "Яндекс.Станция")}</span></header>` : ""}
-          <section class="ysp-track">${q}<div class="ysp-track-info"><div class="ysp-title" title="${p(w)}">${p(w)}</div><div class="ysp-artist" title="${p(k)}">${p(k)}</div></div></section>
-          ${e.show_progress !== !1 && c > 0 ? `<section class="ysp-progress" aria-label="Перемотка и громкость"><span>${h(m)}</span><input class="ysp-seek-range ysp-seek" type="range" min="0" max="${c}" step="1" value="${m}" style="--ysp-seek-pct:${C}%" data-action="seek" aria-label="Перемотка аудио" aria-valuetext="${h(m)} из ${h(c)}">${e.show_volume !== !1 ? `<span class="ysp-volume-side"><button class="ysp-volume-icon-button" type="button" data-action="mute" aria-label="${f ? "Включить звук" : "Выключить звук"}" aria-haspopup="true">${d(z, "ysp-volume-glyph")}</button><span class="ysp-volume-popover" role="dialog" aria-label="Громкость"><input class="ysp-volume-vertical" type="range" min="0" max="1" step="0.01" value="${o}" data-action="volume" aria-label="Громкость" aria-valuetext="${Math.round(o * 100)} процентов" style="--ysp-volume-pct:${Math.round(o * 100)}%"></span></span>` : ""}<span>${h(c)}</span></section>` : ""}
-          ${e.show_controls !== !1 ? `<section class="ysp-controls" aria-label="Управление воспроизведением"><button class="ysp-button" type="button" data-action="previous" aria-label="Предыдущий трек">${d("mdi:skip-previous", "ysp-control-icon")}</button><button class="ysp-button primary" type="button" data-action="${x ? "pause" : "play"}" aria-label="${x ? "Пауза" : "Воспроизвести"}">${d(x ? "mdi:pause" : "mdi:play", "ysp-control-icon")}</button><button class="ysp-button" type="button" data-action="next" aria-label="Следующий трек">${d("mdi:skip-next", "ysp-control-icon")}</button></section>` : ""}
-          ${e.show_volume !== !1 && (e.show_progress === !1 || c <= 0) ? `<section class="ysp-volume" aria-label="Громкость"><span class="ysp-volume-icon">${d(z, "ysp-volume-glyph")}</span><input class="ysp-range" type="range" min="0" max="1" step="0.01" value="${o}" data-action="volume" aria-label="Громкость"><button class="ysp-chip ysp-mute-button" type="button" data-action="mute" aria-label="${f ? "Включить звук" : "Выключить звук"}">${d(H, "ysp-chip-icon")}</button></section>` : ""}
-          ${e.show_presets !== !1 && P.length > 0 ? `<section class="ysp-section"><p class="ysp-label">Избранное</p><div class="ysp-preset-row">${P.map((g, _) => `<button class="ysp-preset" type="button" data-action="preset" data-index="${_}">${R(g.icon)}<span>${p(g.name)}</span></button>`).join("")}</div></section>` : ""}
-          ${e.show_quick_commands !== !1 && M.length > 0 ? `<section class="ysp-section"><p class="ysp-label">Быстрые команды</p><div class="ysp-command-row">${M.map((g, _) => `<button class="ysp-command" type="button" data-action="command" data-index="${_}">${d(g.icon ?? "mdi:gesture-tap-button")}<span>${p(g.name)}</span></button>`).join("")}</div></section>` : ""}
+          ${t.show_header !== !1 ? `<header class="ysp-header">${u(t.icon ?? "mdi:speaker-wireless", "ysp-device-icon")}<span class="ysp-name">${p(t.name ?? "Яндекс.Станция")}</span></header>` : ""}
+          <section class="ysp-track">${U}<div class="ysp-track-info"><div class="ysp-title" title="${p(w)}">${p(w)}</div><div class="ysp-artist" title="${p(k)}">${p(k)}</div></div></section>
+          ${t.show_progress !== !1 && c > 0 ? `<section class="ysp-progress" aria-label="Перемотка и громкость"><span>${g(m)}</span><input class="ysp-seek-range ysp-seek" type="range" min="0" max="${c}" step="1" value="${m}" style="--ysp-seek-pct:${I}%" data-action="seek" aria-label="Перемотка аудио" aria-valuetext="${g(m)} из ${g(c)}">${t.show_volume !== !1 ? `<span class="ysp-volume-side"><button class="ysp-volume-icon-button" type="button" data-action="mute" aria-label="${f ? "Включить звук" : "Выключить звук"}" aria-haspopup="true">${u(P, "ysp-volume-glyph")}</button><span class="ysp-volume-popover" role="dialog" aria-label="Громкость"><input class="ysp-volume-vertical" type="range" min="0" max="1" step="0.01" value="${n}" data-action="volume" aria-label="Громкость" aria-valuetext="${Math.round(n * 100)} процентов" style="--ysp-volume-pct:${Math.round(n * 100)}%"></span></span>` : ""}<span>${g(c)}</span></section>` : ""}
+          ${t.show_controls !== !1 ? `<section class="ysp-controls" aria-label="Управление воспроизведением"><button class="ysp-button" type="button" data-action="previous" aria-label="Предыдущий трек">${u("mdi:skip-previous", "ysp-control-icon")}</button><button class="ysp-button primary" type="button" data-action="${x ? "pause" : "play"}" aria-label="${x ? "Пауза" : "Воспроизвести"}">${u(x ? "mdi:pause" : "mdi:play", "ysp-control-icon")}</button><button class="ysp-button" type="button" data-action="next" aria-label="Следующий трек">${u("mdi:skip-next", "ysp-control-icon")}</button></section>` : ""}
+          ${t.show_volume !== !1 && (t.show_progress === !1 || c <= 0) ? `<section class="ysp-volume" aria-label="Громкость"><span class="ysp-volume-icon">${u(P, "ysp-volume-glyph")}</span><input class="ysp-range" type="range" min="0" max="1" step="0.01" value="${n}" data-action="volume" aria-label="Громкость"><button class="ysp-chip ysp-mute-button" type="button" data-action="mute" aria-label="${f ? "Включить звук" : "Выключить звук"}">${u(F, "ysp-chip-icon")}</button></section>` : ""}
+          ${t.show_presets !== !1 && M.length > 0 ? `<section class="ysp-section"><p class="ysp-label">Избранное</p><div class="ysp-preset-row">${M.map((v, _) => `<button class="ysp-preset" type="button" data-action="preset" data-index="${_}">${R(v.icon)}<span>${p(v.name)}</span></button>`).join("")}</div></section>` : ""}
+          ${t.show_quick_commands !== !1 && z.length > 0 ? `<section class="ysp-section"><p class="ysp-label">Быстрые команды</p><div class="ysp-command-row">${z.map((v, _) => `<button class="ysp-command" type="button" data-action="command" data-index="${_}">${u(v.icon ?? "mdi:gesture-tap-button")}<span>${p(v.name)}</span></button>`).join("")}</div></section>` : ""}
         </div>
       </article>
     `;
   }
-  call(e, t = {}) {
-    !this._hass || !this._config || this._hass.callService("media_player", e, { entity_id: this._config.entity, ...t });
+  call(t, e = {}) {
+    !this._hass || !this._config || this._hass.callService("media_player", t, { entity_id: this._config.entity, ...e });
   }
-  handleClick(e) {
-    var a;
-    const t = e.target instanceof Element ? e.target.closest("[data-action]") : null;
-    if (!t) return;
-    const n = t.dataset.action;
-    if (n === "volume" && t instanceof HTMLInputElement && e instanceof MouseEvent) {
-      const o = t.getBoundingClientRect(), c = o.height > 0 ? (o.bottom - e.clientY) / o.height : 0, m = v(c, 0, 1, 0);
-      t.value = m.toFixed(2), this.handleInput({ target: t });
+  handleClick(t) {
+    var r;
+    const e = t.target instanceof Element ? t.target.closest("[data-action]") : null;
+    if (!e) return;
+    const i = e.dataset.action;
+    if (i === "volume" && e instanceof HTMLInputElement && t instanceof MouseEvent) {
+      const n = e.getBoundingClientRect(), c = n.height > 0 ? (n.bottom - t.clientY) / n.height : 0, m = h(c, 0, 1, 0);
+      e.value = m.toFixed(2), this.handleInput({ target: e });
       return;
     }
-    if (n === "play" && this.call("media_play"), n === "pause" && this.call("media_pause"), n === "previous" && this.call("media_previous_track"), n === "next" && this.call("media_next_track"), n === "mute") {
-      const o = ((a = this.mediaState()) == null ? void 0 : a.attributes) ?? {};
-      this.call("volume_mute", { is_volume_muted: o.is_volume_muted !== !0 });
+    if (i === "play" && this.call("media_play"), i === "pause" && this.call("media_pause"), i === "previous" && this.call("media_previous_track"), i === "next" && this.call("media_next_track"), i === "mute") {
+      const n = ((r = this.mediaState()) == null ? void 0 : r.attributes) ?? {};
+      this.call("volume_mute", { is_volume_muted: n.is_volume_muted !== !0 });
     }
-    if (n === "command") {
-      const o = this.normalizedCommands()[Number(t.dataset.index)];
-      o && this.call("play_media", { media_content_id: o.command, media_content_type: "command" });
+    if (i === "command") {
+      const n = this.normalizedCommands()[Number(e.dataset.index)];
+      n && this.call("play_media", { media_content_id: n.command, media_content_type: "command" });
     }
-    if (n === "preset") {
-      const o = this.normalizedPresets()[Number(t.dataset.index)];
-      if (!o) return;
+    if (i === "preset") {
+      const n = this.normalizedPresets()[Number(e.dataset.index)];
+      if (!n) return;
       this.call("play_media", {
-        media_content_id: o.command ?? o.media_content_id,
-        media_content_type: o.command ? "command" : o.media_content_type ?? "music"
+        media_content_id: n.command ?? n.media_content_id,
+        media_content_type: n.command ? "command" : n.media_content_type ?? "music"
       });
     }
   }
-  handleInput(e) {
-    const t = e.target instanceof HTMLInputElement ? e.target : null;
-    t && (t.dataset.action === "volume" && (this.call("volume_set", { volume_level: Number(t.value) }), t.setAttribute("aria-valuetext", `${Math.round(Number(t.value) * 100)} процентов`), t.style.setProperty("--ysp-volume-pct", `${Math.round(Number(t.value) * 100)}%`), t.setAttribute("title", `${Math.round(Number(t.value) * 100)}%`)), t.dataset.action === "seek" && (this.call("media_seek", { seek_position: Number(t.value) }), t.setAttribute("aria-valuetext", `${h(Number(t.value))} из ${h(Number(t.max))}`), t.style.setProperty("--ysp-seek-pct", `${Number(t.max) > 0 ? Number(t.value) / Number(t.max) * 100 : 0}%`)));
+  handleInput(t) {
+    const e = t.target instanceof HTMLInputElement ? t.target : null;
+    e && (e.dataset.action === "volume" && (this.call("volume_set", { volume_level: Number(e.value) }), e.setAttribute("aria-valuetext", `${Math.round(Number(e.value) * 100)} процентов`), e.style.setProperty("--ysp-volume-pct", `${Math.round(Number(e.value) * 100)}%`), e.setAttribute("title", `${Math.round(Number(e.value) * 100)}%`)), e.dataset.action === "seek" && (this.call("media_seek", { seek_position: Number(e.value) }), e.setAttribute("aria-valuetext", `${g(Number(e.value))} из ${g(Number(e.max))}`), e.style.setProperty("--ysp-seek-pct", `${Number(e.max) > 0 ? Number(e.value) / Number(e.max) * 100 : 0}%`)));
   }
-  handleVolumePointerDown(e) {
-    var t;
-    e.target instanceof HTMLInputElement && e.target.dataset.action === "volume" && (this._volumeInteracting = !0, (t = this._root.querySelector(".ysp-card")) == null || t.classList.add("ysp-volume-interacting"));
+  handleVolumePointerDown(t) {
+    var e;
+    t.target instanceof HTMLInputElement && t.target.dataset.action === "volume" && (this._volumeInteracting = !0, (e = this._root.querySelector(".ysp-card")) == null || e.classList.add("ysp-volume-interacting"), t.target.setPointerCapture(t.pointerId), this.setVolumeFromPointer(t.target, t));
+  }
+  handleVolumePointerMove(t) {
+    !this._volumeInteracting || !(t.target instanceof HTMLInputElement) || t.target.dataset.action !== "volume" || this.setVolumeFromPointer(t.target, t);
+  }
+  setVolumeFromPointer(t, e) {
+    const i = t.getBoundingClientRect(), r = h(i.height > 0 ? (i.bottom - e.clientY) / i.height : 0, 0, 1, 0);
+    t.value = r.toFixed(2), this.handleInput({ target: t });
   }
   handleVolumePointerUp() {
-    var e;
-    this._volumeInteracting = !1, (e = this._root.querySelector(".ysp-card")) == null || e.classList.remove("ysp-volume-interacting");
+    var t;
+    this._volumeInteracting = !1, (t = this._root.querySelector(".ysp-card")) == null || t.classList.remove("ysp-volume-interacting");
   }
 }
 customElements.get("yandex-station-player") || customElements.define("yandex-station-player", X);
