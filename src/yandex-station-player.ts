@@ -325,6 +325,15 @@ class YandexStationPlayerCard extends HTMLElement {
     if (!target) return;
     const action = target.dataset.action;
 
+    if (action === 'volume' && target instanceof HTMLInputElement && event instanceof MouseEvent) {
+      const bounds = target.getBoundingClientRect();
+      const position = bounds.height > 0 ? (bounds.bottom - event.clientY) / bounds.height : 0;
+      const value = clamp(position, 0, 1, 0);
+      target.value = value.toFixed(2);
+      this.handleInput({ target } as unknown as Event);
+      return;
+    }
+
     if (action === 'play') this.call('media_play');
     if (action === 'pause') this.call('media_pause');
     if (action === 'previous') this.call('media_previous_track');
