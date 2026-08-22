@@ -201,6 +201,10 @@ class YandexStationPlayerCard extends HTMLElement {
   private _boundPointerMove: (event: Event) => void;
   private _boundPointerUp: (event: Event) => void;
   private _volumeInteracting = false;
+  private _pendingRender = false;
+  private _localVolume: number | null = null;
+  private _volumeSendTimer: number | null = null;
+  private _volumeToSend: number | null = null;
 
   constructor() {
     super();
@@ -225,6 +229,10 @@ class YandexStationPlayerCard extends HTMLElement {
 
   set hass(value: HomeAssistant) {
     this._hass = value;
+    if (this._localVolume !== null) {
+      const remote = clamp(this.mediaState()?.attributes.volume_level, 0, 1, this._localVolume);
+      if (Math.abs(remote - this._localVolume) < 0.03) this._localVolume = null;
+    }
     this.render();
   }
 
@@ -239,6 +247,8 @@ class YandexStationPlayerCard extends HTMLElement {
     this._root.addEventListener('pointermove', this._boundPointerMove);
     this._root.addEventListener('pointerup', this._boundPointerUp);
     this._root.addEventListener('pointercancel', this._boundPointerUp);
+    window.addEventListener('pointerup', this._boundPointerUp);
+    window.addEventListener('pointercancel', this._boundPointerUp);
   }
 
   disconnectedCallback(): void {
@@ -248,6 +258,8 @@ class YandexStationPlayerCard extends HTMLElement {
     this._root.removeEventListener('pointermove', this._boundPointerMove);
     this._root.removeEventListener('pointerup', this._boundPointerUp);
     this._root.removeEventListener('pointercancel', this._boundPointerUp);
+    window.removeEventListener('pointerup', this._boundPointerUp);
+    window.removeEventListener('pointercancel', this._boundPointerUp);
   }
 
   private config(): CardConfig {
@@ -278,11 +290,15 @@ class YandexStationPlayerCard extends HTMLElement {
 
   private render(): void {
     if (!this._config) return;
+    if (this._volumeInteracting) {
+      this._pendingRender = true;
+      return;
+    }
     const config = this.config();
     const state = this.mediaState();
     const attributes = state?.attributes ?? {};
     const theme = this.mergedTheme();
-    const volume = clamp(attributes.volume_level, 0, 1, 0.5);
+    const volume = this._localVolume ?? clamp(attributes.volume_level, 0, 1, 0.5);
     const duration = Math.max(0, Number(attributes.media_duration) || 0);
     const position = currentMediaPosition(attributes, state?.state, duration);
     const seekPercent = duration > 0 ? Math.round((position / duration) * 1000) / 10 : 0;
@@ -341,14 +357,7 @@ class YandexStationPlayerCard extends HTMLElement {
     if (!target) return;
     const action = target.dataset.action;
 
-    if (action === 'volume' && target instanceof HTMLInputElement && event instanceof MouseEvent) {
-      const bounds = target.getBoundingClientRect();
-      const position = bounds.height > 0 ? (bounds.bottom - event.clientY) / bounds.height : 0;
-      const value = clamp(position, 0, 1, 0);
-      target.value = value.toFixed(2);
-      this.handleInput({ target } as unknown as Event);
-      return;
-    }
+    if (action === 'volume') return;
 
     if (action === 'play') this.call('media_play');
     if (action === 'pause') this.call('media_pause');
@@ -376,10 +385,13 @@ class YandexStationPlayerCard extends HTMLElement {
     const target = event.target instanceof HTMLInputElement ? event.target : null;
     if (!target) return;
     if (target.dataset.action === 'volume') {
-      this.call('volume_set', { volume_level: Number(target.value) });
-      target.setAttribute('aria-valuetext', `${Math.round(Number(target.value) * 100)} процентов`);
-      target.style.setProperty('--ysp-volume-pct', `${Math.round(Number(target.value) * 100)}%`);
-      target.setAttribute('title', `${Math.round(Number(target.value) * 100)}%`);
+      const value = clamp(Number(target.value), 0, 1, 0);
+      const percent = Math.round(value * 100);
+      this._localVolume = value;
+      target.setAttribute('aria-valuetext', `${percent} процентов`);
+      target.style.setProperty('--ysp-volume-pct', `${percent}%`);
+      target.setAttribute('title', `${percent}%`);
+      this.sendVolume(value);
     }
     if (target.dataset.action === 'seek') {
       this.call('media_seek', { seek_position: Number(target.value) });
@@ -392,7 +404,13 @@ class YandexStationPlayerCard extends HTMLElement {
     if (event.target instanceof HTMLInputElement && event.target.dataset.action === 'volume') {
       this._volumeInteracting = true;
       this._root.querySelector<HTMLElement>('.ysp-card')?.classList.add('ysp-volume-interacting');
-      event.target.setPointerCapture((event as PointerEvent).pointerId);
+      const pointerEvent = event as PointerEvent;
+      pointerEvent.preventDefault();
+      try {
+        event.target.setPointerCapture(pointerEvent.pointerId);
+      } catch {
+        /* capture недоступен — продолжаем по обычным pointermove */
+      }
       this.setVolumeFromPointer(event.target, event as PointerEvent);
     }
   }
@@ -410,8 +428,35 @@ class YandexStationPlayerCard extends HTMLElement {
   }
 
   private handleVolumePointerUp(): void {
+    if (!this._volumeInteracting) return;
     this._volumeInteracting = false;
     this._root.querySelector<HTMLElement>('.ysp-card')?.classList.remove('ysp-volume-interacting');
+    this.flushVolume();
+    if (this._pendingRender) {
+      this._pendingRender = false;
+      this.render();
+    }
+  }
+
+  private sendVolume(value: number): void {
+    this._volumeToSend = value;
+    if (this._volumeSendTimer !== null) return;
+    this.flushVolume();
+  }
+
+  private flushVolume(): void {
+    if (this._volumeSendTimer !== null) {
+      clearTimeout(this._volumeSendTimer);
+      this._volumeSendTimer = null;
+    }
+    if (this._volumeToSend === null) return;
+    const value = this._volumeToSend;
+    this._volumeToSend = null;
+    this.call('volume_set', { volume_level: value });
+    this._volumeSendTimer = window.setTimeout(() => {
+      this._volumeSendTimer = null;
+      if (this._volumeToSend !== null) this.flushVolume();
+    }, 180);
   }
 }
 
