@@ -1,6 +1,6 @@
 var W = Object.defineProperty;
-var B = (s, a, e) => a in s ? W(s, a, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[a] = e;
-var m = (s, a, e) => B(s, typeof a != "symbol" ? a + "" : a, e);
+var B = (s, i, e) => i in s ? W(s, i, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[i] = e;
+var m = (s, i, e) => B(s, typeof i != "symbol" ? i + "" : i, e);
 const c = {
   primary: "#00685d",
   accent: "#26a69a",
@@ -45,6 +45,7 @@ const c = {
 .ysp-progress { gap:8px; width:100%; color:var(--ysp-secondary); font-size:11px; align-items:center; }
 .ysp-progress .ysp-seek { min-width:0; flex:1; height:8px; margin:0; accent-color:var(--ysp-primary); cursor:pointer; border-radius:999px; background:linear-gradient(to right, var(--ysp-primary) 0 var(--ysp-seek-pct), var(--ysp-surface) var(--ysp-seek-pct) 100%); }
 .ysp-progress .ysp-volume-side { position:relative; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; padding:2px 6px; }
+.ysp-progress .ysp-volume-side::after { content:""; position:absolute; left:0; right:0; bottom:100%; height:10px; }
 .ysp-progress .ysp-volume-icon-button { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; flex:0 0 28px; padding:0; border:0; border-radius:999px; background:transparent; color:var(--ysp-primary); cursor:pointer; transition:background .12s ease, color .12s ease, transform .12s ease; }
 .ysp-progress .ysp-volume-icon-button:hover, .ysp-progress .ysp-volume-icon-button:focus-visible { background:var(--ysp-surface); }
 .ysp-progress .ysp-volume-icon-button:active { transform:scale(.92); }
@@ -72,35 +73,35 @@ const c = {
 .ysp-art-top .ysp-track-info { align-items:var(--ysp-align-items); text-align:var(--ysp-align); }
 @media (max-width:420px) { .ysp-controls { gap:12px; } .ysp-button.primary { width:56px; height:56px; } .ysp-progress .ysp-volume-side .ysp-range { width:60px; flex:0 0 60px; } }
 `;
-function x(s, a, e, t) {
-  const i = typeof s == "number" ? s : Number(s);
-  return Number.isFinite(i) ? Math.min(e, Math.max(a, i)) : t;
+function x(s, i, e, t) {
+  const a = typeof s == "number" ? s : Number(s);
+  return Number.isFinite(a) ? Math.min(e, Math.max(i, a)) : t;
 }
-function d(s, a) {
-  return /[<>`{};"']/.test(s) ? a : s;
+function d(s, i) {
+  return /[<>`{};"']/.test(s) ? i : s;
 }
 function p(s) {
-  return s.replace(/[&<>"']/g, (a) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[a] ?? a);
+  return s.replace(/[&<>"']/g, (i) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[i] ?? i);
 }
-function o(s, a = "") {
-  return typeof s == "string" || typeof s == "number" ? String(s) : a;
+function o(s, i = "") {
+  return typeof s == "string" || typeof s == "number" ? String(s) : i;
 }
-function l(s, a = "ysp-action-icon") {
+function l(s, i = "ysp-action-icon") {
   const e = s.trim(), t = /^(mdi|hass|yandex):[a-z0-9-]+$/i.test(e) ? e : "mdi:help-circle-outline";
-  return `<ha-icon class="ysp-icon ${p(a)}" icon="${p(t)}" aria-hidden="true"></ha-icon>`;
+  return `<ha-icon class="ysp-icon ${p(i)}" icon="${p(t)}" aria-hidden="true"></ha-icon>`;
 }
 function U(s) {
   return l(s);
 }
 function u(s) {
   if (!Number.isFinite(s) || s < 0) return "0:00";
-  const a = Math.floor(s / 60), e = Math.floor(s % 60).toString().padStart(2, "0");
-  return `${a}:${e}`;
+  const i = Math.floor(s / 60), e = Math.floor(s % 60).toString().padStart(2, "0");
+  return `${i}:${e}`;
 }
-function V(s, a, e) {
+function V(s, i, e) {
   const t = Math.max(0, Number(s.media_position) || 0);
-  if (a !== "playing" || e <= 0) return Math.min(t, e);
-  const i = o(s.media_position_updated_at), n = Date.parse(i);
+  if (i !== "playing" || e <= 0) return Math.min(t, e);
+  const a = o(s.media_position_updated_at), n = Date.parse(a);
   return Number.isFinite(n) ? Math.min(e, t + Math.max(0, (Date.now() - n) / 1e3)) : Math.min(t, e);
 }
 class G extends HTMLElement {
@@ -151,7 +152,7 @@ class G extends HTMLElement {
   }
   render() {
     if (!this._config) return;
-    const e = this.config(), t = this.mediaState(), i = (t == null ? void 0 : t.attributes) ?? {}, n = this.mergedTheme(), r = x(i.volume_level, 0, 1, 0.5), y = Math.max(0, Number(i.media_duration) || 0), g = V(i, t == null ? void 0 : t.state, y), S = y > 0 ? Math.round(g / y * 1e3) / 10 : 0, w = o(i.media_title, t ? "Ничего не играет" : "Ожидание данных"), k = o(i.media_artist || i.media_album_name, (t == null ? void 0 : t.state) === "unavailable" ? "Устройство недоступно" : "Яндекс.Станция"), $ = o(i.entity_picture), E = x(e.artwork_size, 48, 220, 80), P = x(e.opacity, 0.1, 1, 0.72), j = x(e.blur, 0, 40, 18), v = e.content_align === "center" ? "center" : e.content_align === "right" ? "right" : "left", T = v === "center" ? "center" : v === "right" ? "flex-end" : "flex-start", I = e.controls_position === "left" ? "flex-start" : e.controls_position === "right" ? "flex-end" : "center", A = e.layout === "vertical" ? "ysp-vertical" : "", L = e.artwork_position === "right" ? "ysp-art-right" : e.artwork_position === "top" ? "ysp-art-top" : "", H = "", Y = (t == null ? void 0 : t.state) === "unavailable" || !t, b = (t == null ? void 0 : t.state) === "playing", f = i.is_volume_muted === !0 || r === 0, z = f ? "mdi:volume-off" : "mdi:volume-high", q = f ? "mdi:volume-high" : "mdi:volume-mute", M = this.normalizedPresets(), C = this.normalizedCommands(), D = `
+    const e = this.config(), t = this.mediaState(), a = (t == null ? void 0 : t.attributes) ?? {}, n = this.mergedTheme(), r = x(a.volume_level, 0, 1, 0.5), y = Math.max(0, Number(a.media_duration) || 0), g = V(a, t == null ? void 0 : t.state, y), S = y > 0 ? Math.round(g / y * 1e3) / 10 : 0, w = o(a.media_title, t ? "Ничего не играет" : "Ожидание данных"), k = o(a.media_artist || a.media_album_name, (t == null ? void 0 : t.state) === "unavailable" ? "Устройство недоступно" : "Яндекс.Станция"), $ = o(a.entity_picture), E = x(e.artwork_size, 48, 220, 80), P = x(e.opacity, 0.1, 1, 0.72), j = x(e.blur, 0, 40, 18), v = e.content_align === "center" ? "center" : e.content_align === "right" ? "right" : "left", T = v === "center" ? "center" : v === "right" ? "flex-end" : "flex-start", I = e.controls_position === "left" ? "flex-start" : e.controls_position === "right" ? "flex-end" : "center", A = e.layout === "vertical" ? "ysp-vertical" : "", L = e.artwork_position === "right" ? "ysp-art-right" : e.artwork_position === "top" ? "ysp-art-top" : "", H = "", Y = (t == null ? void 0 : t.state) === "unavailable" || !t, b = (t == null ? void 0 : t.state) === "playing", f = a.is_volume_muted === !0 || r === 0, z = f ? "mdi:volume-off" : "mdi:volume-high", q = f ? "mdi:volume-high" : "mdi:volume-mute", M = this.normalizedPresets(), C = this.normalizedCommands(), D = `
       ${R}
       :host { --ysp-primary:${d(o(n.primary), c.primary)}; --ysp-accent:${d(o(n.accent), c.accent)}; --ysp-text:${d(o(n.text), c.text)}; --ysp-secondary:${d(o(n.secondary), c.secondary)}; --ysp-surface:${d(o(n.surface), c.surface)}; --ysp-background:${d(o(n.background), c.background)}; --ysp-on-primary:${d(o(n.on_primary), c.on_primary)}; --ysp-border:${d(o(n.border), c.border)}; --ysp-shadow:${d(o(n.shadow), c.shadow)}; --ysp-art-size:${E}px; --ysp-blur:${j}px; --ysp-controls-position:${I}; --ysp-align:${v}; --ysp-align-items:${T}; }
       .ysp-card { opacity:${P}; }
@@ -178,16 +179,16 @@ class G extends HTMLElement {
     var n;
     const t = e.target instanceof Element ? e.target.closest("[data-action]") : null;
     if (!t) return;
-    const i = t.dataset.action;
-    if (i === "play" && this.call("media_play"), i === "pause" && this.call("media_pause"), i === "previous" && this.call("media_previous_track"), i === "next" && this.call("media_next_track"), i === "mute") {
+    const a = t.dataset.action;
+    if (a === "play" && this.call("media_play"), a === "pause" && this.call("media_pause"), a === "previous" && this.call("media_previous_track"), a === "next" && this.call("media_next_track"), a === "mute") {
       const r = ((n = this.mediaState()) == null ? void 0 : n.attributes) ?? {};
       this.call("volume_mute", { is_volume_muted: r.is_volume_muted !== !0 });
     }
-    if (i === "command") {
+    if (a === "command") {
       const r = this.normalizedCommands()[Number(t.dataset.index)];
       r && this.call("play_media", { media_content_id: r.command, media_content_type: "command" });
     }
-    if (i === "preset") {
+    if (a === "preset") {
       const r = this.normalizedPresets()[Number(t.dataset.index)];
       if (!r) return;
       this.call("play_media", {
