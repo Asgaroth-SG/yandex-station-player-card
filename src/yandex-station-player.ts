@@ -114,13 +114,14 @@ const CARD_STYLE = `
 .ysp-progress { gap:8px; width:100%; color:var(--ysp-secondary); font-size:11px; align-items:center; }
 .ysp-progress .ysp-seek { min-width:0; flex:1; height:8px; margin:0; accent-color:var(--ysp-primary); cursor:pointer; border-radius:999px; background:linear-gradient(to right, var(--ysp-primary) 0 var(--ysp-seek-pct), var(--ysp-surface) var(--ysp-seek-pct) 100%); }
 .ysp-progress .ysp-volume-side { position:relative; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; padding:2px 6px; }
-.ysp-progress .ysp-volume-side::after { content:""; position:absolute; left:0; right:0; bottom:100%; height:10px; z-index:1; }
+.ysp-progress .ysp-volume-side::after { content:""; position:absolute; left:-8px; right:-8px; bottom:100%; height:14px; z-index:1; }
+.ysp-progress .ysp-volume-side.ysp-volume-open::before { content:""; position:absolute; left:-14px; right:-14px; bottom:-10px; top:-104px; z-index:1; }
 .ysp-progress .ysp-volume-icon-button { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; flex:0 0 28px; padding:0; border:0; border-radius:999px; background:transparent; color:var(--ysp-primary); cursor:pointer; transition:background .12s ease, color .12s ease, transform .12s ease; }
 .ysp-progress .ysp-volume-icon-button:hover, .ysp-progress .ysp-volume-icon-button:focus-visible { background:var(--ysp-surface); }
 .ysp-progress .ysp-volume-icon-button:active { transform:scale(.92); }
 .ysp-progress .ysp-volume-glyph { width:18px; height:18px; --mdc-icon-size:18px; }
-.ysp-progress .ysp-volume-popover { position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); display:flex; align-items:center; justify-content:center; padding:14px 10px; border-radius:12px; background:var(--ysp-background, var(--ha-card-background, #fff)); border:1px solid var(--ysp-border); box-shadow:var(--ysp-shadow); opacity:0; pointer-events:none; transition:opacity .14s ease; z-index:2; }
-.ysp-progress .ysp-volume-side:hover .ysp-volume-popover, .ysp-progress .ysp-volume-side:focus-within .ysp-volume-popover, .ysp-progress .ysp-volume-side:has(.ysp-volume-vertical:active) .ysp-volume-popover, .ysp-progress .ysp-volume-popover:hover, .ysp-progress .ysp-volume-popover:focus-within, .ysp-card.ysp-volume-interacting .ysp-volume-popover { opacity:1; pointer-events:auto; }
+.ysp-progress .ysp-volume-popover { position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); display:flex; align-items:center; justify-content:center; padding:14px 12px; border-radius:12px; background:var(--ysp-background, var(--ha-card-background, #fff)); border:1px solid var(--ysp-border); box-shadow:var(--ysp-shadow); opacity:0; pointer-events:none; transition:opacity .14s ease; z-index:2; }
+.ysp-progress .ysp-volume-side.ysp-volume-open .ysp-volume-popover, .ysp-progress .ysp-volume-side:focus-within .ysp-volume-popover, .ysp-card.ysp-volume-interacting .ysp-volume-popover { opacity:1; pointer-events:auto; }
 .ysp-volume-vertical { align-self:center; width:32px; height:80px; margin:0; padding:0; border:0; background:linear-gradient(to top, var(--ysp-primary) 0 var(--ysp-volume-pct, 0%), var(--ysp-surface) var(--ysp-volume-pct, 0%)) center / 8px 100% no-repeat; border-radius:999px; cursor:pointer; writing-mode:vertical-lr; direction:rtl; -webkit-appearance:none; appearance:none; transition:filter .18s ease, transform .18s ease; }
 .ysp-volume-vertical { touch-action:none; }
 .ysp-volume-vertical:hover { filter:brightness(1.08); }
@@ -201,6 +202,10 @@ class YandexStationPlayerCard extends HTMLElement {
   private _boundPointerMove: (event: Event) => void;
   private _boundPointerUp: (event: Event) => void;
   private _volumeInteracting = false;
+  private _volumeOpen = false;
+  private _volumeCloseTimer: number | null = null;
+  private _boundPointerOver: (event: Event) => void;
+  private _boundPointerOut: (event: Event) => void;
   private _pendingRender = false;
   private _localVolume: number | null = null;
   private _volumeSendTimer: number | null = null;
@@ -214,6 +219,8 @@ class YandexStationPlayerCard extends HTMLElement {
     this._boundPointerDown = (event) => this.handleVolumePointerDown(event);
     this._boundPointerMove = (event) => this.handleVolumePointerMove(event);
     this._boundPointerUp = () => this.handleVolumePointerUp();
+    this._boundPointerOver = (event) => this.handleVolumePointerOver(event);
+    this._boundPointerOut = (event) => this.handleVolumePointerOut(event);
   }
 
   setConfig(config: CardConfig): void {
@@ -247,6 +254,8 @@ class YandexStationPlayerCard extends HTMLElement {
     this._root.addEventListener('pointermove', this._boundPointerMove);
     this._root.addEventListener('pointerup', this._boundPointerUp);
     this._root.addEventListener('pointercancel', this._boundPointerUp);
+    this._root.addEventListener('pointerover', this._boundPointerOver);
+    this._root.addEventListener('pointerout', this._boundPointerOut);
     window.addEventListener('pointerup', this._boundPointerUp);
     window.addEventListener('pointercancel', this._boundPointerUp);
   }
@@ -258,8 +267,14 @@ class YandexStationPlayerCard extends HTMLElement {
     this._root.removeEventListener('pointermove', this._boundPointerMove);
     this._root.removeEventListener('pointerup', this._boundPointerUp);
     this._root.removeEventListener('pointercancel', this._boundPointerUp);
+    this._root.removeEventListener('pointerover', this._boundPointerOver);
+    this._root.removeEventListener('pointerout', this._boundPointerOut);
     window.removeEventListener('pointerup', this._boundPointerUp);
     window.removeEventListener('pointercancel', this._boundPointerUp);
+    if (this._volumeCloseTimer !== null) {
+      clearTimeout(this._volumeCloseTimer);
+      this._volumeCloseTimer = null;
+    }
   }
 
   private config(): CardConfig {
@@ -337,7 +352,7 @@ class YandexStationPlayerCard extends HTMLElement {
         <div class="ysp-content">
           ${config.show_header !== false ? `<header class="ysp-header">${renderHaIcon(config.icon ?? 'mdi:speaker-wireless', 'ysp-device-icon')}<span class="ysp-name">${escapeHtml(config.name ?? 'Яндекс.Станция')}</span></header>` : ''}
           <section class="ysp-track">${artwork}<div class="ysp-track-info"><div class="ysp-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div><div class="ysp-artist" title="${escapeHtml(artist)}">${escapeHtml(artist)}</div></div></section>
-          ${config.show_progress !== false && duration > 0 ? `<section class="ysp-progress" aria-label="Перемотка и громкость"><span>${formatTime(position)}</span><input class="ysp-seek-range ysp-seek" type="range" min="0" max="${duration}" step="1" value="${position}" style="--ysp-seek-pct:${seekPercent}%" data-action="seek" aria-label="Перемотка аудио" aria-valuetext="${formatTime(position)} из ${formatTime(duration)}">${config.show_volume !== false ? `<span class="ysp-volume-side"><button class="ysp-volume-icon-button" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}" aria-haspopup="true">${renderHaIcon(volumeIcon, 'ysp-volume-glyph')}</button><span class="ysp-volume-popover" role="dialog" aria-label="Громкость"><input class="ysp-volume-vertical" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость" aria-valuetext="${Math.round(volume * 100)} процентов" style="--ysp-volume-pct:${Math.round(volume * 100)}%"></span></span>` : ''}<span>${formatTime(duration)}</span></section>` : ''}
+          ${config.show_progress !== false && duration > 0 ? `<section class="ysp-progress" aria-label="Перемотка и громкость"><span>${formatTime(position)}</span><input class="ysp-seek-range ysp-seek" type="range" min="0" max="${duration}" step="1" value="${position}" style="--ysp-seek-pct:${seekPercent}%" data-action="seek" aria-label="Перемотка аудио" aria-valuetext="${formatTime(position)} из ${formatTime(duration)}">${config.show_volume !== false ? `<span class="ysp-volume-side${this._volumeOpen ? ' ysp-volume-open' : ''}"><button class="ysp-volume-icon-button" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}" aria-haspopup="true">${renderHaIcon(volumeIcon, 'ysp-volume-glyph')}</button><span class="ysp-volume-popover" role="dialog" aria-label="Громкость"><input class="ysp-volume-vertical" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость" aria-valuetext="${Math.round(volume * 100)} процентов" style="--ysp-volume-pct:${Math.round(volume * 100)}%"></span></span>` : ''}<span>${formatTime(duration)}</span></section>` : ''}
           ${config.show_controls !== false ? `<section class="ysp-controls" aria-label="Управление воспроизведением"><button class="ysp-button" type="button" data-action="previous" aria-label="Предыдущий трек">${renderHaIcon('mdi:skip-previous', 'ysp-control-icon')}</button><button class="ysp-button primary" type="button" data-action="${isPlaying ? 'pause' : 'play'}" aria-label="${isPlaying ? 'Пауза' : 'Воспроизвести'}">${renderHaIcon(isPlaying ? 'mdi:pause' : 'mdi:play', 'ysp-control-icon')}</button><button class="ysp-button" type="button" data-action="next" aria-label="Следующий трек">${renderHaIcon('mdi:skip-next', 'ysp-control-icon')}</button></section>` : ''}
           ${config.show_volume !== false && (config.show_progress === false || duration <= 0) ? `<section class="ysp-volume" aria-label="Громкость"><span class="ysp-volume-icon">${renderHaIcon(volumeIcon, 'ysp-volume-glyph')}</span><input class="ysp-range" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость"><button class="ysp-chip ysp-mute-button" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}">${renderHaIcon(muteIcon, 'ysp-chip-icon')}</button></section>` : ''}
           ${config.show_presets !== false && presets.length > 0 ? `<section class="ysp-section"><p class="ysp-label">Избранное</p><div class="ysp-preset-row">${presets.map((preset, index) => `<button class="ysp-preset" type="button" data-action="preset" data-index="${index}">${renderPresetIcon(preset.icon)}<span>${escapeHtml(preset.name)}</span></button>`).join('')}</div></section>` : ''}
@@ -425,6 +440,35 @@ class YandexStationPlayerCard extends HTMLElement {
     const value = clamp(bounds.height > 0 ? (bounds.bottom - event.clientY) / bounds.height : 0, 0, 1, 0);
     target.value = value.toFixed(2);
     this.handleInput({ target } as unknown as Event);
+  }
+
+  private handleVolumePointerOver(event: Event): void {
+    if (!(event.target instanceof Element)) return;
+    if (!event.target.closest('.ysp-volume-side')) return;
+    if (this._volumeCloseTimer !== null) {
+      clearTimeout(this._volumeCloseTimer);
+      this._volumeCloseTimer = null;
+    }
+    this.setVolumeOpen(true);
+  }
+
+  private handleVolumePointerOut(event: Event): void {
+    if (!(event.target instanceof Element)) return;
+    if (!event.target.closest('.ysp-volume-side')) return;
+    const next = (event as PointerEvent).relatedTarget;
+    if (next instanceof Element && next.closest('.ysp-volume-side')) return;
+    if (this._volumeInteracting) return;
+    if (this._volumeCloseTimer !== null) clearTimeout(this._volumeCloseTimer);
+    this._volumeCloseTimer = window.setTimeout(() => {
+      this._volumeCloseTimer = null;
+      if (!this._volumeInteracting) this.setVolumeOpen(false);
+    }, 260);
+  }
+
+  private setVolumeOpen(open: boolean): void {
+    this._volumeOpen = open;
+    const side = this._root.querySelector<HTMLElement>('.ysp-volume-side');
+    side?.classList.toggle('ysp-volume-open', open);
   }
 
   private handleVolumePointerUp(): void {
