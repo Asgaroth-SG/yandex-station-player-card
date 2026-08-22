@@ -112,8 +112,7 @@ const CARD_STYLE = `
 .ysp-volume-glyph { width:18px; height:18px; --mdc-icon-size:18px; }
 .ysp-range { min-width:0; flex:1; height:8px; accent-color:var(--ysp-primary); cursor:pointer; }
 .ysp-progress { gap:8px; width:100%; color:var(--ysp-secondary); font-size:11px; align-items:center; }
-.ysp-progress input[type="range"] { min-width:0; flex:1; height:8px; margin:0; accent-color:var(--ysp-primary); cursor:pointer; border-radius:999px; background:linear-gradient(to right, var(--ysp-primary) 0 var(--ysp-seek-pct), var(--ysp-surface) var(--ysp-seek-pct) 100%); }
-.ysp-progress .ysp-seek { flex:1; }
+.ysp-progress .ysp-seek { min-width:0; flex:1; height:8px; margin:0; accent-color:var(--ysp-primary); cursor:pointer; border-radius:999px; background:linear-gradient(to right, var(--ysp-primary) 0 var(--ysp-seek-pct), var(--ysp-surface) var(--ysp-seek-pct) 100%); }
 .ysp-progress .ysp-volume-side { position:relative; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; }
 .ysp-progress .ysp-volume-icon-button { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; flex:0 0 28px; padding:0; border:0; border-radius:999px; background:transparent; color:var(--ysp-primary); cursor:pointer; transition:background .12s ease, color .12s ease, transform .12s ease; }
 .ysp-progress .ysp-volume-icon-button:hover, .ysp-progress .ysp-volume-icon-button:focus-visible { background:var(--ysp-surface); }
@@ -121,11 +120,11 @@ const CARD_STYLE = `
 .ysp-progress .ysp-volume-glyph { width:18px; height:18px; --mdc-icon-size:18px; }
 .ysp-progress .ysp-volume-popover { position:absolute; bottom:calc(100% + 8px); left:50%; transform:translate(-50%, 6px); display:flex; align-items:center; justify-content:center; padding:10px 8px; border-radius:12px; background:var(--ysp-background, var(--ha-card-background, #fff)); border:1px solid var(--ysp-border); box-shadow:var(--ysp-shadow); opacity:0; pointer-events:none; transition:opacity .14s ease, transform .14s ease; }
 .ysp-progress .ysp-volume-side:hover .ysp-volume-popover, .ysp-progress .ysp-volume-side:focus-within .ysp-volume-popover, .ysp-progress .ysp-volume-popover:hover, .ysp-progress .ysp-volume-popover:focus-within { opacity:1; pointer-events:auto; transform:translate(-50%, 0); }
-.ysp-progress .ysp-volume-vertical { appearance:none; -webkit-appearance:none; writing-mode:vertical-lr; direction:rtl; width:24px; height:120px; margin:0; padding:0; background:transparent; accent-color:var(--ysp-primary); cursor:pointer; }
-.ysp-progress .ysp-volume-vertical::-webkit-slider-runnable-track { width:6px; border-radius:999px; background:var(--ysp-surface); }
-.ysp-progress .ysp-volume-vertical::-moz-range-track { width:6px; border-radius:999px; background:var(--ysp-surface); }
-.ysp-progress .ysp-volume-vertical::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:999px; background:var(--ysp-primary); border:0; margin-left:-5px; box-shadow:0 2px 4px rgba(0,0,0,.18); }
-.ysp-progress .ysp-volume-vertical::-moz-range-thumb { width:16px; height:16px; border-radius:999px; background:var(--ysp-primary); border:0; box-shadow:0 2px 4px rgba(0,0,0,.18); }
+.ysp-volume-vertical { width:24px; height:120px; margin:0; padding:0; background:transparent; cursor:pointer; writing-mode:vertical-lr; -webkit-appearance:slider-vertical; appearance:slider-vertical; accent-color:var(--ysp-primary); }
+.ysp-volume-vertical::-webkit-slider-runnable-track { width:6px; border-radius:999px; background:var(--ysp-surface); }
+.ysp-volume-vertical::-moz-range-track { width:6px; border-radius:999px; background:var(--ysp-surface); }
+.ysp-volume-vertical::-webkit-slider-thumb { width:16px; height:16px; border-radius:999px; background:var(--ysp-primary); border:0; box-shadow:0 2px 4px rgba(0,0,0,.18); }
+.ysp-volume-vertical::-moz-range-thumb { width:16px; height:16px; border-radius:999px; background:var(--ysp-primary); border:0; box-shadow:0 2px 4px rgba(0,0,0,.18); }
 .ysp-command-row, .ysp-preset-row { gap:8px; flex-wrap:wrap; }
 .ysp-chip, .ysp-command, .ysp-preset { min-height:32px; padding:8px 12px; border-radius:999px; background:var(--ysp-surface); color:var(--ysp-primary); font-size:12px; font-weight:600; line-height:1; }
 .ysp-icon { display:inline-flex; align-items:center; justify-content:center; vertical-align:middle; flex:0 0 auto; line-height:0; }
