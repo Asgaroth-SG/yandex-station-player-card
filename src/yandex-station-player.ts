@@ -351,7 +351,7 @@ class YandexStationPlayerCard extends HTMLElement {
       if (!item) return;
       this.call('play_media', {
         media_content_id: item.command ?? item.media_content_id,
-        media_content_type: item.command ? 'text' : (item.media_content_type ?? 'music'),
+        media_content_type: item.command ? 'command' : (item.media_content_type ?? 'music'),
       });
     }
   }
