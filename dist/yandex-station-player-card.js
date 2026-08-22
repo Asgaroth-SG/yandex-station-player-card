@@ -52,10 +52,10 @@ const c = {
 .ysp-progress .ysp-volume-glyph { width:18px; height:18px; --mdc-icon-size:18px; }
 .ysp-progress .ysp-volume-popover { position:absolute; bottom:calc(100% + 6px); left:50%; transform:translate(-50%, 6px); display:flex; align-items:center; justify-content:center; padding:14px 8px; border-radius:12px; background:var(--ysp-background, var(--ha-card-background, #fff)); border:1px solid var(--ysp-border); box-shadow:var(--ysp-shadow); opacity:0; pointer-events:none; transition:opacity .14s ease, transform .14s ease; }
 .ysp-progress .ysp-volume-side:hover .ysp-volume-popover, .ysp-progress .ysp-volume-side:focus-within .ysp-volume-popover, .ysp-progress .ysp-volume-popover:hover, .ysp-progress .ysp-volume-popover:focus-within { opacity:1; pointer-events:auto; transform:translate(-50%, 0); }
-.ysp-volume-vertical { align-self:center; width:24px; height:80px; margin:0; padding:0; background:transparent; cursor:pointer; writing-mode:vertical-lr; -webkit-appearance:slider-vertical; appearance:slider-vertical; accent-color:var(--ysp-primary); }
+.ysp-volume-vertical { align-self:center; width:14px; height:80px; margin:0; padding:0; background:transparent; cursor:pointer; writing-mode:vertical-lr; -webkit-appearance:slider-vertical; appearance:slider-vertical; accent-color:var(--ysp-primary); }
 .ysp-volume-vertical::-webkit-slider-runnable-track { width:8px; border-radius:999px; background:linear-gradient(to top, var(--ysp-primary) 0 var(--ysp-volume-pct, 0%), var(--ysp-surface) var(--ysp-volume-pct, 0%) 100%); }
 .ysp-volume-vertical::-moz-range-track { width:8px; border-radius:999px; background:linear-gradient(to top, var(--ysp-primary) 0 var(--ysp-volume-pct, 0%), var(--ysp-surface) var(--ysp-volume-pct, 0%) 100%); }
-.ysp-volume-vertical::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px; margin:auto; border-radius:999px; background:var(--ysp-primary); border:0; }
+.ysp-volume-vertical::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px; margin:0; border-radius:999px; background:var(--ysp-primary); border:0; }
 .ysp-volume-vertical::-moz-range-thumb { width:14px; height:14px; border:0; border-radius:999px; background:var(--ysp-primary); }
 
 .ysp-command-row, .ysp-preset-row { gap:8px; flex-wrap:wrap; }
