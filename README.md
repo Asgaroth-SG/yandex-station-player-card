@@ -30,7 +30,6 @@ controls_position: center
 artwork_size: 80
 opacity: 0.72
 blur: 18
-volume_on_hover: false
 
 show_header: true
 show_artwork: true
@@ -87,6 +86,8 @@ presets:
 ```
 
 Ползунок перемотки отображается при наличии у entity атрибутов `media_duration` и `media_position` и отправляет `media_player.media_seek` с `seek_position` в секундах. Для локального режима YandexStation интеграция поддерживает перемотку, если текущий плеер отдал длительность трека.
+
+Ползунок громкости и кнопка mute встроены в строку прогресса и появляются при наведении курсора на эту строку (или фокусе с клавиатуры). Если у плеера нет `media_duration`, строка прогресса не рендерится, и тогда отображается отдельная секция громкости в исходном виде.
 
 В `presets[].icon` и `quick_commands[].icon` поддерживаются иконки Home Assistant в формате `mdi:name`, например `mdi:music`, `mdi:radio`, `mdi:volume-minus` или `mdi:stop`.
 
