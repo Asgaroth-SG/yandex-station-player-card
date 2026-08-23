@@ -49,6 +49,7 @@ type CardConfig = {
   opacity?: number;
   blur?: number;
   artwork_size?: number;
+  artwork_blur?: number;
   layout?: 'horizontal' | 'vertical';
   artwork_position?: 'left' | 'right' | 'top' | 'background';
   content_align?: 'left' | 'center' | 'right';
@@ -337,6 +338,7 @@ class YandexStationPlayerCard extends HTMLElement {
     const artworkSize = clamp(config.artwork_size, 48, 220, 80);
     const opacity = clamp(config.opacity, 0.1, 1, 0.72);
     const blur = clamp(config.blur, 0, 40, 18);
+    const artworkBlur = clamp(config.artwork_blur, 0, 40, 8);
     const align = config.content_align === 'center' ? 'center' : config.content_align === 'right' ? 'right' : 'left';
     const alignItems = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
     const controlsPosition = config.controls_position === 'left' ? 'flex-start' : config.controls_position === 'right' ? 'flex-end' : 'center';
@@ -355,6 +357,7 @@ class YandexStationPlayerCard extends HTMLElement {
       ${CARD_STYLE}
       :host { --ysp-primary:${safeCss(asText(theme.primary), DEFAULT_THEME.primary)}; --ysp-accent:${safeCss(asText(theme.accent), DEFAULT_THEME.accent)}; --ysp-text:${safeCss(asText(theme.text), DEFAULT_THEME.text)}; --ysp-secondary:${safeCss(asText(theme.secondary), DEFAULT_THEME.secondary)}; --ysp-surface:${safeCss(asText(theme.surface), DEFAULT_THEME.surface)}; --ysp-background:${safeCss(asText(theme.background), DEFAULT_THEME.background)}; --ysp-on-primary:${safeCss(asText(theme.on_primary), DEFAULT_THEME.on_primary)}; --ysp-border:${safeCss(asText(theme.border), DEFAULT_THEME.border)}; --ysp-shadow:${safeCss(asText(theme.shadow), DEFAULT_THEME.shadow)}; --ysp-art-size:${artworkSize}px; --ysp-blur:${blur}px; --ysp-controls-position:${controlsPosition}; --ysp-align:${align}; --ysp-align-items:${alignItems}; }
       .ysp-card { opacity:${opacity}; }
+      .ysp-card.ysp-art-background .ysp-art-bg { filter:blur(${artworkBlur}px) brightness(0.85); }
     `;
     const artwork = config.show_artwork === false ? '' : picture
       ? `<img class="ysp-art" src="${escapeHtml(picture)}" alt="Обложка текущего трека">`
