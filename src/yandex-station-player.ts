@@ -144,8 +144,8 @@ const CARD_STYLE = `
 .ysp-art-right .ysp-art { order:2; }
 .ysp-art-top .ysp-track { flex-direction:column; align-items:stretch; }
 .ysp-art-top .ysp-track-info { align-items:var(--ysp-align-items); text-align:var(--ysp-align); }
-.ysp-art-bg { position:absolute; inset:0; background-size:cover; background-position:center; filter:blur(18px) saturate(1.1); transform:scale(1.1); opacity:.55; z-index:0; }
-.ysp-art-bg::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,30,28,.55), rgba(15,30,28,.25) 40%, rgba(15,30,28,.7)); }
+.ysp-art-bg { position:absolute; inset:0; background-size:cover; background-position:center; transform:scale(1.05); opacity:.9; z-index:0; }
+.ysp-art-bg::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,30,28,.25), rgba(15,30,28,.05) 30%, rgba(15,30,28,.45) 70%, rgba(15,30,28,.7)); }
 .ysp-card.ysp-art-background { color:#fff; }
 .ysp-card.ysp-art-background .ysp-name, .ysp-card.ysp-art-background .ysp-artist, .ysp-card.ysp-art-background .ysp-progress, .ysp-card.ysp-art-background .ysp-label { color:rgba(255,255,255,.82); }
 .ysp-card.ysp-art-background .ysp-title { color:#fff; }
