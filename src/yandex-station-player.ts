@@ -53,6 +53,7 @@ type CardConfig = {
   layout?: 'horizontal' | 'vertical';
   artwork_position?: 'left' | 'right' | 'top' | 'background';
   content_align?: 'left' | 'center' | 'right';
+  content_size?: number;
   controls_position?: 'left' | 'center' | 'right';
   show_header?: boolean;
   show_artwork?: boolean;
@@ -154,6 +155,11 @@ const CARD_STYLE = `
 .ysp-card.ysp-art-background .ysp-button { background:rgba(255,255,255,.18); color:#fff; }
 .ysp-card.ysp-art-background .ysp-button.primary { background:var(--ysp-primary); color:var(--ysp-on-primary); }
 .ysp-card.ysp-art-background .ysp-content { position:relative; z-index:1; }
+.ysp-card.ysp-art-background .ysp-content { width:var(--ysp-content-size); margin-inline:auto; }
+.ysp-card.ysp-art-background .ysp-header, .ysp-card.ysp-art-background .ysp-track, .ysp-card.ysp-art-background .ysp-controls { justify-content:var(--ysp-content-justify); }
+.ysp-card.ysp-art-background .ysp-track { text-align:var(--ysp-align); }
+.ysp-card.ysp-art-background .ysp-track-info { align-items:var(--ysp-align-items); text-align:var(--ysp-align); }
+.ysp-card.ysp-art-background .ysp-art { display:none; }
 .ysp-card.ysp-art-background .ysp-progress .ysp-seek { background:linear-gradient(to right, var(--ysp-primary) 0 var(--ysp-seek-pct), rgba(255,255,255,.25) var(--ysp-seek-pct) 100%); }
 .ysp-card.ysp-art-background .ysp-chip, .ysp-card.ysp-art-background .ysp-command, .ysp-card.ysp-art-background .ysp-preset { background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.18); }
 .ysp-card.ysp-art-background .ysp-chip:hover, .ysp-card.ysp-art-background .ysp-command:hover, .ysp-card.ysp-art-background .ysp-preset:hover { background:rgba(255,255,255,.2); }
@@ -341,6 +347,8 @@ class YandexStationPlayerCard extends HTMLElement {
     const artworkBlur = clamp(config.artwork_blur, 0, 40, 8);
     const align = config.content_align === 'center' ? 'center' : config.content_align === 'right' ? 'right' : 'left';
     const alignItems = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
+    const contentJustify = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
+    const contentSize = clamp(config.content_size, 50, 100, 100);
     const controlsPosition = config.controls_position === 'left' ? 'flex-start' : config.controls_position === 'right' ? 'flex-end' : 'center';
     const layout = config.layout === 'vertical' ? 'ysp-vertical' : '';
     const artworkPosition = config.artwork_position === 'right' ? 'ysp-art-right' : config.artwork_position === 'top' ? 'ysp-art-top' : config.artwork_position === 'background' ? 'ysp-art-background' : '';
@@ -355,7 +363,7 @@ class YandexStationPlayerCard extends HTMLElement {
 
     const styles = `
       ${CARD_STYLE}
-      :host { --ysp-primary:${safeCss(asText(theme.primary), DEFAULT_THEME.primary)}; --ysp-accent:${safeCss(asText(theme.accent), DEFAULT_THEME.accent)}; --ysp-text:${safeCss(asText(theme.text), DEFAULT_THEME.text)}; --ysp-secondary:${safeCss(asText(theme.secondary), DEFAULT_THEME.secondary)}; --ysp-surface:${safeCss(asText(theme.surface), DEFAULT_THEME.surface)}; --ysp-background:${safeCss(asText(theme.background), DEFAULT_THEME.background)}; --ysp-on-primary:${safeCss(asText(theme.on_primary), DEFAULT_THEME.on_primary)}; --ysp-border:${safeCss(asText(theme.border), DEFAULT_THEME.border)}; --ysp-shadow:${safeCss(asText(theme.shadow), DEFAULT_THEME.shadow)}; --ysp-art-size:${artworkSize}px; --ysp-blur:${blur}px; --ysp-controls-position:${controlsPosition}; --ysp-align:${align}; --ysp-align-items:${alignItems}; }
+      :host { --ysp-primary:${safeCss(asText(theme.primary), DEFAULT_THEME.primary)}; --ysp-accent:${safeCss(asText(theme.accent), DEFAULT_THEME.accent)}; --ysp-text:${safeCss(asText(theme.text), DEFAULT_THEME.text)}; --ysp-secondary:${safeCss(asText(theme.secondary), DEFAULT_THEME.secondary)}; --ysp-surface:${safeCss(asText(theme.surface), DEFAULT_THEME.surface)}; --ysp-background:${safeCss(asText(theme.background), DEFAULT_THEME.background)}; --ysp-on-primary:${safeCss(asText(theme.on_primary), DEFAULT_THEME.on_primary)}; --ysp-border:${safeCss(asText(theme.border), DEFAULT_THEME.border)}; --ysp-shadow:${safeCss(asText(theme.shadow), DEFAULT_THEME.shadow)}; --ysp-art-size:${artworkSize}px; --ysp-blur:${blur}px; --ysp-controls-position:${controlsPosition}; --ysp-align:${align}; --ysp-align-items:${alignItems}; --ysp-content-justify:${contentJustify}; --ysp-content-size:${contentSize}%; }
       .ysp-card { opacity:${opacity}; }
       .ysp-card.ysp-art-background .ysp-art-bg { filter:blur(${artworkBlur}px) brightness(0.85); }
     `;
@@ -368,7 +376,7 @@ class YandexStationPlayerCard extends HTMLElement {
       <article class="ysp-card ${layout} ${artworkPosition} ${hoverVolume} ${this._volumeInteracting ? 'ysp-volume-interacting' : ''}" aria-label="${escapeHtml(config.name ?? 'Яндекс.Станция')}" data-unavailable="${unavailable}">
         <div class="ysp-content">
           ${config.show_header !== false ? `<header class="ysp-header">${renderHaIcon(config.icon ?? 'mdi:speaker-wireless', 'ysp-device-icon')}<span class="ysp-name">${escapeHtml(config.name ?? 'Яндекс.Станция')}</span></header>` : ''}
-          <section class="ysp-track">${artwork}<div class="ysp-track-info"><div class="ysp-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div><div class="ysp-artist" title="${escapeHtml(artist)}">${escapeHtml(artist)}</div></div></section>${picture && config.artwork_position === 'background' ? `<div class="ysp-art-bg" style="background-image:url(${escapeHtml(picture)})" aria-hidden="true"></div>` : ''}
+          <section class="ysp-track">${config.artwork_position === 'background' ? '' : artwork}<div class="ysp-track-info"><div class="ysp-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div><div class="ysp-artist" title="${escapeHtml(artist)}">${escapeHtml(artist)}</div></div></section>${picture && config.artwork_position === 'background' ? `<div class="ysp-art-bg" style="background-image:url(${escapeHtml(picture)})" aria-hidden="true"></div>` : ''}
           ${config.show_progress !== false && duration > 0 ? `<section class="ysp-progress" aria-label="Перемотка и громкость"><span>${formatTime(position)}</span><input class="ysp-seek-range ysp-seek" type="range" min="0" max="${duration}" step="1" value="${position}" style="--ysp-seek-pct:${seekPercent}%" data-action="seek" aria-label="Перемотка аудио" aria-valuetext="${formatTime(position)} из ${formatTime(duration)}">${config.show_volume !== false ? `<span class="ysp-volume-side${this._volumeOpen ? ' ysp-volume-open' : ''}"><button class="ysp-volume-icon-button" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}" aria-haspopup="true">${renderHaIcon(volumeIcon, 'ysp-volume-glyph')}</button><span class="ysp-volume-popover" role="dialog" aria-label="Громкость"><input class="ysp-volume-vertical" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость" aria-valuetext="${Math.round(volume * 100)} процентов" style="--ysp-volume-pct:${Math.round(volume * 100)}%"></span></span>` : ''}<span>${formatTime(duration)}</span></section>` : ''}
           ${config.show_controls !== false ? `<section class="ysp-controls" aria-label="Управление воспроизведением"><button class="ysp-button" type="button" data-action="previous" aria-label="Предыдущий трек">${renderHaIcon('mdi:skip-previous', 'ysp-control-icon')}</button><button class="ysp-button primary" type="button" data-action="${isPlaying ? 'pause' : 'play'}" aria-label="${isPlaying ? 'Пауза' : 'Воспроизвести'}">${renderHaIcon(isPlaying ? 'mdi:pause' : 'mdi:play', 'ysp-control-icon')}</button><button class="ysp-button" type="button" data-action="next" aria-label="Следующий трек">${renderHaIcon('mdi:skip-next', 'ysp-control-icon')}</button></section>` : ''}
           ${config.show_volume !== false && (config.show_progress === false || duration <= 0) ? `<section class="ysp-volume" aria-label="Громкость"><span class="ysp-volume-icon">${renderHaIcon(volumeIcon, 'ysp-volume-glyph')}</span><input class="ysp-range" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость"><button class="ysp-chip ysp-mute-button" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}">${renderHaIcon(muteIcon, 'ysp-chip-icon')}</button></section>` : ''}
