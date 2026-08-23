@@ -50,7 +50,7 @@ type CardConfig = {
   blur?: number;
   artwork_size?: number;
   layout?: 'horizontal' | 'vertical';
-  artwork_position?: 'left' | 'right' | 'top';
+  artwork_position?: 'left' | 'right' | 'top' | 'background';
   content_align?: 'left' | 'center' | 'right';
   controls_position?: 'left' | 'center' | 'right';
   show_header?: boolean;
@@ -144,6 +144,15 @@ const CARD_STYLE = `
 .ysp-art-right .ysp-art { order:2; }
 .ysp-art-top .ysp-track { flex-direction:column; align-items:stretch; }
 .ysp-art-top .ysp-track-info { align-items:var(--ysp-align-items); text-align:var(--ysp-align); }
+.ysp-art-bg { position:absolute; inset:0; background-size:cover; background-position:center; filter:blur(18px) saturate(1.1); transform:scale(1.1); opacity:.55; z-index:0; }
+.ysp-art-bg::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,30,28,.55), rgba(15,30,28,.25) 40%, rgba(15,30,28,.7)); }
+.ysp-card.ysp-art-background { color:#fff; }
+.ysp-card.ysp-art-background .ysp-name, .ysp-card.ysp-art-background .ysp-artist, .ysp-card.ysp-art-background .ysp-progress, .ysp-card.ysp-art-background .ysp-label { color:rgba(255,255,255,.82); }
+.ysp-card.ysp-art-background .ysp-title { color:#fff; }
+.ysp-card.ysp-art-background .ysp-button { background:rgba(255,255,255,.18); color:#fff; }
+.ysp-card.ysp-art-background .ysp-button.primary { background:var(--ysp-primary); color:var(--ysp-on-primary); }
+.ysp-card.ysp-art-background .ysp-content { position:relative; z-index:1; }
+.ysp-card.ysp-art-background .ysp-progress .ysp-seek { background:linear-gradient(to right, var(--ysp-primary) 0 var(--ysp-seek-pct), rgba(255,255,255,.25) var(--ysp-seek-pct) 100%); }
 @media (max-width:420px) { .ysp-controls { gap:12px; } .ysp-button.primary { width:56px; height:56px; } .ysp-progress .ysp-volume-side .ysp-range { width:60px; flex:0 0 60px; } }
 `;
 
@@ -327,7 +336,7 @@ class YandexStationPlayerCard extends HTMLElement {
     const alignItems = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
     const controlsPosition = config.controls_position === 'left' ? 'flex-start' : config.controls_position === 'right' ? 'flex-end' : 'center';
     const layout = config.layout === 'vertical' ? 'ysp-vertical' : '';
-    const artworkPosition = config.artwork_position === 'right' ? 'ysp-art-right' : config.artwork_position === 'top' ? 'ysp-art-top' : '';
+    const artworkPosition = config.artwork_position === 'right' ? 'ysp-art-right' : config.artwork_position === 'top' ? 'ysp-art-top' : config.artwork_position === 'background' ? 'ysp-art-background' : '';
     const hoverVolume = ''; // @deprecated: volume_on_hover больше не используется
     const unavailable = state?.state === 'unavailable' || !state;
     const isPlaying = state?.state === 'playing';
@@ -351,7 +360,7 @@ class YandexStationPlayerCard extends HTMLElement {
       <article class="ysp-card ${layout} ${artworkPosition} ${hoverVolume} ${this._volumeInteracting ? 'ysp-volume-interacting' : ''}" aria-label="${escapeHtml(config.name ?? 'Яндекс.Станция')}" data-unavailable="${unavailable}">
         <div class="ysp-content">
           ${config.show_header !== false ? `<header class="ysp-header">${renderHaIcon(config.icon ?? 'mdi:speaker-wireless', 'ysp-device-icon')}<span class="ysp-name">${escapeHtml(config.name ?? 'Яндекс.Станция')}</span></header>` : ''}
-          <section class="ysp-track">${artwork}<div class="ysp-track-info"><div class="ysp-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div><div class="ysp-artist" title="${escapeHtml(artist)}">${escapeHtml(artist)}</div></div></section>
+          <section class="ysp-track">${artwork}<div class="ysp-track-info"><div class="ysp-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div><div class="ysp-artist" title="${escapeHtml(artist)}">${escapeHtml(artist)}</div></div></section>${picture && config.artwork_position === 'background' ? `<div class="ysp-art-bg" style="background-image:url(${escapeHtml(picture)})" aria-hidden="true"></div>` : ''}
           ${config.show_progress !== false && duration > 0 ? `<section class="ysp-progress" aria-label="Перемотка и громкость"><span>${formatTime(position)}</span><input class="ysp-seek-range ysp-seek" type="range" min="0" max="${duration}" step="1" value="${position}" style="--ysp-seek-pct:${seekPercent}%" data-action="seek" aria-label="Перемотка аудио" aria-valuetext="${formatTime(position)} из ${formatTime(duration)}">${config.show_volume !== false ? `<span class="ysp-volume-side${this._volumeOpen ? ' ysp-volume-open' : ''}"><button class="ysp-volume-icon-button" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}" aria-haspopup="true">${renderHaIcon(volumeIcon, 'ysp-volume-glyph')}</button><span class="ysp-volume-popover" role="dialog" aria-label="Громкость"><input class="ysp-volume-vertical" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость" aria-valuetext="${Math.round(volume * 100)} процентов" style="--ysp-volume-pct:${Math.round(volume * 100)}%"></span></span>` : ''}<span>${formatTime(duration)}</span></section>` : ''}
           ${config.show_controls !== false ? `<section class="ysp-controls" aria-label="Управление воспроизведением"><button class="ysp-button" type="button" data-action="previous" aria-label="Предыдущий трек">${renderHaIcon('mdi:skip-previous', 'ysp-control-icon')}</button><button class="ysp-button primary" type="button" data-action="${isPlaying ? 'pause' : 'play'}" aria-label="${isPlaying ? 'Пауза' : 'Воспроизвести'}">${renderHaIcon(isPlaying ? 'mdi:pause' : 'mdi:play', 'ysp-control-icon')}</button><button class="ysp-button" type="button" data-action="next" aria-label="Следующий трек">${renderHaIcon('mdi:skip-next', 'ysp-control-icon')}</button></section>` : ''}
           ${config.show_volume !== false && (config.show_progress === false || duration <= 0) ? `<section class="ysp-volume" aria-label="Громкость"><span class="ysp-volume-icon">${renderHaIcon(volumeIcon, 'ysp-volume-glyph')}</span><input class="ysp-range" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость"><button class="ysp-chip ysp-mute-button" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}">${renderHaIcon(muteIcon, 'ysp-chip-icon')}</button></section>` : ''}
