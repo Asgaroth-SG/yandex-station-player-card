@@ -7,27 +7,6 @@ interface CustomCardRegistration {
   getEntitySuggestion?: (hass: HomeAssistant, entityId: string) => { config: CardConfig } | null;
 }
 
-type ConfigFormSchema = {
-  name: string;
-  required?: boolean;
-  selector?: Record<string, unknown>;
-  type?: string;
-};
-
-type ConfigForm = {
-  schema: ConfigFormSchema[];
-  computeLabel?: (schema: ConfigFormSchema) => string | undefined;
-  computeHelper?: (schema: ConfigFormSchema) => string | undefined;
-};
-
-type ConfigFormElement = HTMLElement & {
-  setConfig?: (config: CardConfig) => void;
-  hass?: HomeAssistant;
-};
-
-type ConfigChangedEvent = CustomEvent<{ config: CardConfig }>;
-
-
 type MediaState = {
   state: string;
   attributes: Record<string, unknown>;
@@ -249,16 +228,22 @@ function currentMediaPosition(attributes: Record<string, unknown>, state: string
   return Math.min(duration, position + Math.max(0, (Date.now() - updatedTimestamp) / 1000));
 }
 
+type EditorConfig = CardConfig & { [key: string]: unknown };
+
 class YandexStationPlayerEditor extends HTMLElement {
   private _root: ShadowRoot;
-  private _config: CardConfig = { type: 'custom:yandex-station-player', entity: 'media_player.' };
+  private _config: EditorConfig = { type: 'custom:yandex-station-player', entity: '' };
   private _hass?: HomeAssistant;
+  private _boundInput: (event: Event) => void;
   private _boundChange: (event: Event) => void;
+  private _boundClick: (event: Event) => void;
 
   constructor() {
     super();
     this._root = this.attachShadow({ mode: 'open' });
-    this._boundChange = (event) => this.handleChange(event);
+    this._boundInput = (event) => this.handleField(event);
+    this._boundChange = (event) => this.handleField(event);
+    this._boundClick = (event) => this.handleClick(event);
   }
 
   setConfig(config: CardConfig): void {
@@ -268,44 +253,113 @@ class YandexStationPlayerEditor extends HTMLElement {
 
   set hass(value: HomeAssistant) {
     this._hass = value;
-    const form = this._root.querySelector<ConfigFormElement>('ha-form');
-    if (form) form.hass = value;
+    this.render();
   }
 
   connectedCallback(): void {
-    this._root.addEventListener('value-changed', this._boundChange);
+    this._root.addEventListener('input', this._boundInput);
+    this._root.addEventListener('change', this._boundChange);
+    this._root.addEventListener('click', this._boundClick);
     this.render();
   }
 
   disconnectedCallback(): void {
-    this._root.removeEventListener('value-changed', this._boundChange);
+    this._root.removeEventListener('input', this._boundInput);
+    this._root.removeEventListener('change', this._boundChange);
+    this._root.removeEventListener('click', this._boundClick);
   }
 
   private render(): void {
-    this._root.innerHTML = `
-      <style>
-        :host { display:block; }
-        ha-form { display:block; }
-      </style>
-      <ha-form></ha-form>
-    `;
-    const form = this._root.querySelector<ConfigFormElement>('ha-form');
-    if (!form) return;
-    form.hass = this._hass;
-    form.setConfig?.(this._config);
-    form.addEventListener('value-changed', this._boundChange);
+    const config = this._config;
+    const presets = Array.isArray(config.presets) ? config.presets : [];
+    const commands = Array.isArray(config.quick_commands) ? config.quick_commands : [];
+    const theme = { ...DEFAULT_THEME, ...(config.theme ?? {}) };
+    const stateEntities = Object.keys(this._hass?.states ?? {}).filter((entity) => entity.startsWith('media_player.'));
+    const bool = (field: keyof CardConfig, fallback: boolean): boolean => config[field] === undefined ? fallback : config[field] === true;
+    const value = (field: keyof CardConfig, fallback = ''): string => escapeHtml(asText(config[field], fallback));
+    const option = (label: string, optionValue: string, selectedValue: string): string => `<option value="${optionValue}"${selectedValue === optionValue ? ' selected' : ''}>${label}</option>`;
+    const select = (field: keyof CardConfig, label: string, options: string[], labels: string[], fallback: string): string => `<label>${label}<select data-field="${field}">${options.map((item, index) => option(labels[index], item, asText(config[field], fallback))).join('')}</select></label>`;
+    const number = (field: keyof CardConfig, label: string, min: number, max: number, step: number, fallback: number): string => `<label>${label}<input data-field="${field}" type="number" min="${min}" max="${max}" step="${step}" value="${escapeHtml(asText(config[field], String(fallback)))}"></label>`;
+    const toggle = (field: keyof CardConfig, label: string, fallback: boolean): string => `<label class="toggle"><input data-field="${field}" type="checkbox"${bool(field, fallback) ? ' checked' : ''}><span>${label}</span></label>`;
+    const entityOptions = stateEntities.map((entity) => `<option value="${escapeHtml(entity)}"></option>`).join('');
+    const presetRows = presets.map((preset, index) => `<div class="array-row">
+      <div class="row-head"><strong>Пресет ${index + 1}</strong><button type="button" data-action="remove-preset" data-index="${index}">Удалить</button></div>
+      <div class="grid two"><label>Название<input data-array="presets" data-index="${index}" data-subfield="name" value="${escapeHtml(asText(preset.name))}"></label><label>Иконка<input data-array="presets" data-index="${index}" data-subfield="icon" value="${escapeHtml(asText(preset.icon, 'mdi:music-note'))}"></label></div>
+      <label>Команда Алисе<input data-array="presets" data-index="${index}" data-subfield="command" value="${escapeHtml(asText(preset.command))}"></label>
+      <div class="grid two"><label>ID медиа<input data-array="presets" data-index="${index}" data-subfield="media_content_id" value="${escapeHtml(asText(preset.media_content_id))}"></label><label>Тип медиа<input data-array="presets" data-index="${index}" data-subfield="media_content_type" value="${escapeHtml(asText(preset.media_content_type, 'music'))}"></label></div>
+    </div>`).join('');
+    const commandRows = commands.map((command, index) => `<div class="array-row">
+      <div class="row-head"><strong>Команда ${index + 1}</strong><button type="button" data-action="remove-command" data-index="${index}">Удалить</button></div>
+      <div class="grid two"><label>Название<input data-array="quick_commands" data-index="${index}" data-subfield="name" value="${escapeHtml(asText(command.name))}"></label><label>Иконка<input data-array="quick_commands" data-index="${index}" data-subfield="icon" value="${escapeHtml(asText(command.icon, 'mdi:gesture-tap-button'))}"></label></div>
+      <label>Команда Алисе<input data-array="quick_commands" data-index="${index}" data-subfield="command" value="${escapeHtml(asText(command.command))}"></label>
+    </div>`).join('');
+    const themeFields = (Object.keys(DEFAULT_THEME) as Array<keyof typeof DEFAULT_THEME>).map((field) => `<label>${field}<input data-theme="${field}" value="${escapeHtml(theme[field])}"></label>`).join('');
+
+    this._root.innerHTML = `<style>${EDITOR_STYLE}</style><div class="editor">
+      <section><h3>Основные</h3><label>Медиа-плеер<input list="ysp-media-entities" data-field="entity" value="${value('entity')}" required></label><datalist id="ysp-media-entities">${entityOptions}</datalist>
+        <div class="grid two"><label>Название<input data-field="name" value="${value('name', 'Алиса')}"></label><label>Иконка<input data-field="icon" value="${value('icon', 'mdi:speaker-wireless')}"></label></div>
+        <div class="grid two">${select('name_position', 'Положение названия', ['left', 'center', 'right'], ['Слева', 'По центру', 'Справа'], 'left')}${select('icon_position', 'Положение иконки', ['left', 'center', 'right'], ['Слева', 'По центру', 'Справа'], 'left')}</div>
+      </section>
+      <section><h3>Расположение</h3><div class="grid two">${select('layout', 'Layout', ['horizontal', 'vertical'], ['Горизонтальный', 'Вертикальный'], 'horizontal')}${select('artwork_position', 'Обложка', ['left', 'right', 'top', 'background'], ['Слева', 'Справа', 'Сверху', 'Фон'], 'left')}</div>
+        <div class="grid two">${select('content_align', 'Выравнивание трека', ['left', 'center', 'right'], ['Слева', 'По центру', 'Справа'], 'left')}${select('controls_position', 'Положение кнопок', ['left', 'center', 'right'], ['Слева', 'По центру', 'Справа'], 'center')}</div>
+        <div class="grid three">${number('content_size', 'Ширина содержимого (%)', 50, 100, 1, 100)}${number('artwork_size', 'Размер обложки (px)', 48, 220, 1, 80)}${number('artwork_blur', 'Blur обложки (px)', 0, 40, 1, 8)}</div>
+      </section>
+      <section><h3>Внешний вид</h3><div class="grid two">${number('opacity', 'Прозрачность', 0.1, 1, 0.01, 0.72)}${number('blur', 'Blur карточки (px)', 0, 40, 1, 18)}</div><div class="toggles">${toggle('show_header', 'Шапка', true)}${toggle('show_artwork', 'Обложка', true)}${toggle('show_progress', 'Прогресс', true)}${toggle('show_controls', 'Кнопки', true)}${toggle('show_volume', 'Громкость', true)}${toggle('show_presets', 'Пресеты', true)}${toggle('show_quick_commands', 'Команды', true)}</div></section>
+      <section><div class="section-head"><h3>Пресеты</h3><button type="button" data-action="add-preset">Добавить</button></div>${bool('show_presets', true) ? (presetRows || '<p class="hint">Пресетов пока нет.</p>') : '<p class="hint">Секция отключена переключателем «Пресеты».</p>'}</section>
+      <section><div class="section-head"><h3>Быстрые команды</h3><button type="button" data-action="add-command">Добавить</button></div>${bool('show_quick_commands', true) ? (commandRows || '<p class="hint">Команд пока нет.</p>') : '<p class="hint">Секция отключена переключателем «Команды».</p>'}</section>
+      <section><div class="section-head"><h3>Тема</h3><button type="button" data-action="reset-theme">Сбросить тему</button></div><div class="grid two">${themeFields}</div></section>
+    </div>`;
   }
 
-  private handleChange(event: Event): void {
-    const target = event.target as HTMLElement & { value?: Record<string, unknown> };
-    if (target.tagName.toLowerCase() !== 'ha-form' || !target.value) return;
-    const next = { ...this._config, ...(target.value as Partial<CardConfig>) };
-    this._config = next;
-    this.dispatchEvent(new CustomEvent<{ config: CardConfig }>('config-changed', {
-      bubbles: true,
-      composed: true,
-      detail: { config: next },
-    }) as ConfigChangedEvent);
+  private emit(): void {
+    this.dispatchEvent(new CustomEvent<{ config: CardConfig }>('config-changed', { bubbles: true, composed: true, detail: { config: this._config } }));
+  }
+
+  private handleField(event: Event): void {
+    const target = event.target as HTMLInputElement | HTMLSelectElement;
+    if (!target) return;
+    const field = target.dataset.field as keyof CardConfig | undefined;
+    if (field) {
+      const value: unknown = target instanceof HTMLInputElement && target.type === 'checkbox' ? target.checked : target instanceof HTMLInputElement && target.type === 'number' ? Number(target.value) : target.value;
+      if (target instanceof HTMLInputElement && target.type === 'number' && target.value === '') delete this._config[field];
+      else (this._config as Record<string, unknown>)[field] = value;
+      this.emit();
+      if (field === 'artwork_position' || field === 'show_presets' || field === 'show_quick_commands') this.render();
+      return;
+    }
+    const arrayName = target.dataset.array as 'presets' | 'quick_commands' | undefined;
+    if (arrayName) {
+      const index = Number(target.dataset.index);
+      const subfield = target.dataset.subfield;
+      const rows = (this._config[arrayName] ?? []) as Array<Record<string, unknown>>;
+      if (rows[index] && subfield) rows[index][subfield] = target.value;
+      this.emit();
+      return;
+    }
+    const themeField = target.dataset.theme as keyof typeof DEFAULT_THEME | undefined;
+    if (themeField) {
+      this._config.theme = { ...this._config.theme, [themeField]: target.value };
+      this.emit();
+    }
+  }
+
+  private handleClick(event: Event): void {
+    const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-action]') : null;
+    const action = target?.dataset.action;
+    if (!target || !action) return;
+    if (action === 'add-preset') {
+      this._config.presets = [...(this._config.presets ?? []), { name: '', command: '', icon: 'mdi:music-note' }];
+    } else if (action === 'remove-preset') {
+      this._config.presets = (this._config.presets ?? []).filter((_, index) => index !== Number(target.dataset.index));
+    } else if (action === 'add-command') {
+      this._config.quick_commands = [...(this._config.quick_commands ?? []), { name: '', command: '', icon: 'mdi:gesture-tap-button' }];
+    } else if (action === 'remove-command') {
+      this._config.quick_commands = (this._config.quick_commands ?? []).filter((_, index) => index !== Number(target.dataset.index));
+    } else if (action === 'reset-theme') {
+      delete this._config.theme;
+    }
+    this.emit();
+    this.render();
   }
 }
 
@@ -313,62 +367,22 @@ if (!customElements.get('yandex-station-player-editor')) {
   customElements.define('yandex-station-player-editor', YandexStationPlayerEditor);
 }
 
-function editorForm(): ConfigForm {
-  return {
-    schema: [
-      { name: 'entity', required: true, selector: { entity: { filter: [{ domain: 'media_player' }] } } },
-      { name: 'name', selector: { text: {} } },
-      { name: 'name_position', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
-      { name: 'icon', selector: { icon: {} } },
-      { name: 'icon_position', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
-      { name: 'layout', selector: { select: { options: ['horizontal', 'vertical'], mode: 'dropdown' } } },
-      { name: 'artwork_position', selector: { select: { options: ['left', 'right', 'top', 'background'], mode: 'dropdown' } } },
-      { name: 'content_align', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
-      { name: 'controls_position', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
-      { name: 'content_size', selector: { number: { min: 50, max: 100, step: 1, mode: 'slider' } } },
-      { name: 'artwork_size', selector: { number: { min: 48, max: 220, step: 1, mode: 'box' } } },
-      { name: 'artwork_blur', selector: { number: { min: 0, max: 40, step: 1, mode: 'slider' } } },
-      { name: 'opacity', selector: { number: { min: 0.1, max: 1, step: 0.01, mode: 'slider' } } },
-      { name: 'blur', selector: { number: { min: 0, max: 40, step: 1, mode: 'slider' } } },
-      { name: 'show_header', selector: { boolean: {} } },
-      { name: 'show_artwork', selector: { boolean: {} } },
-      { name: 'show_progress', selector: { boolean: {} } },
-      { name: 'show_controls', selector: { boolean: {} } },
-      { name: 'show_volume', selector: { boolean: {} } },
-      { name: 'show_presets', selector: { boolean: {} } },
-      { name: 'show_quick_commands', selector: { boolean: {} } },
-      { name: 'presets', selector: { object: {} } },
-      { name: 'quick_commands', selector: { object: {} } },
-      { name: 'theme', selector: { object: {} } },
-    ],
-    computeLabel: (schema) => ({
-      entity: 'Медиа-плеер',
-      name: 'Название',
-      name_position: 'Положение названия',
-      icon: 'Иконка',
-      icon_position: 'Положение иконки',
-      layout: 'Расположение карточки',
-      artwork_position: 'Положение обложки',
-      content_align: 'Выравнивание трека',
-      controls_position: 'Положение кнопок',
-      content_size: 'Ширина содержимого (%)',
-      artwork_size: 'Размер обложки (px)',
-      artwork_blur: 'Размытие обложки (px)',
-      opacity: 'Прозрачность',
-      blur: 'Размытие фона (px)',
-      show_header: 'Показывать шапку',
-      show_artwork: 'Показывать обложку',
-      show_progress: 'Показывать прогресс',
-      show_controls: 'Показывать кнопки',
-      show_volume: 'Показывать громкость',
-      show_presets: 'Показывать пресеты',
-      show_quick_commands: 'Показывать команды',
-      presets: 'Пресеты (YAML-массив)',
-      quick_commands: 'Быстрые команды (YAML-массив)',
-      theme: 'Тема (YAML-объект)',
-    }[schema.name]),
-  };
-}
+const EDITOR_STYLE = `
+:host { display:block; color:var(--primary-text-color, #0f1e1c); font-family:var(--paper-font-body1_-_font-family, sans-serif); }
+* { box-sizing:border-box; }
+.editor { display:grid; gap:12px; }
+section { padding:16px; border:1px solid var(--divider-color, rgba(0,137,123,.18)); border-radius:16px; background:var(--card-background-color, rgba(255,255,255,.72)); }
+h3 { margin:0 0 12px; font-size:16px; }
+label { display:grid; gap:5px; margin:0 0 10px; font-size:12px; color:var(--secondary-text-color, #3d4946); }
+input, select { width:100%; min-height:38px; padding:8px 10px; border:1px solid var(--divider-color, #bcc9c5); border-radius:10px; color:var(--primary-text-color, #0f1e1c); background:var(--primary-background-color, #fff); font:inherit; }
+input:focus, select:focus { outline:2px solid var(--accent-color, #26a69a); outline-offset:1px; }
+.grid { display:grid; gap:10px; }.grid.two { grid-template-columns:repeat(2, minmax(0, 1fr)); }.grid.three { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+.toggles { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; }.toggle { display:flex; align-items:center; gap:8px; min-height:34px; }.toggle input { width:auto; min-height:auto; }
+.section-head, .row-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }.section-head h3 { margin-bottom:12px; }
+button { border:0; border-radius:999px; padding:8px 12px; color:var(--text-primary-color, #00685d); background:var(--secondary-background-color, #d5e6e3); cursor:pointer; font:inherit; }.row-head button { color:var(--error-color, #ba1a1a); }
+.array-row { margin-top:10px; padding:12px; border:1px solid var(--divider-color, rgba(0,137,123,.15)); border-radius:12px; }.hint { margin:0; color:var(--secondary-text-color, #3d4946); font-size:13px; }
+@media (max-width:600px) { .grid.two, .grid.three { grid-template-columns:1fr; } }
+`;
 
 class YandexStationPlayerCard extends HTMLElement {
   private _config?: CardConfig;
@@ -421,13 +435,53 @@ class YandexStationPlayerCard extends HTMLElement {
     this.render();
   }
 
-  static getConfigForm(): ConfigForm {
-    return editorForm();
+  static getConfigForm(): Record<string, unknown> {
+    return {
+      schema: [
+        { name: 'entity', required: true, selector: { entity: { filter: [{ domain: 'media_player' }] } } },
+        { name: 'name', selector: { text: {} } },
+        { name: 'name_position', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
+        { name: 'icon', selector: { icon: {} } },
+        { name: 'icon_position', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
+        { name: 'layout', selector: { select: { options: ['horizontal', 'vertical'], mode: 'dropdown' } } },
+        { name: 'artwork_position', selector: { select: { options: ['left', 'right', 'top', 'background'], mode: 'dropdown' } } },
+        { name: 'content_align', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
+        { name: 'controls_position', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
+        { name: 'content_size', selector: { number: { min: 50, max: 100, step: 1, mode: 'slider' } } },
+        { name: 'artwork_size', selector: { number: { min: 48, max: 220, step: 1, mode: 'box' } } },
+        { name: 'artwork_blur', selector: { number: { min: 0, max: 40, step: 1, mode: 'slider' } } },
+        { name: 'opacity', selector: { number: { min: 0.1, max: 1, step: 0.01, mode: 'slider' } } },
+        { name: 'blur', selector: { number: { min: 0, max: 40, step: 1, mode: 'slider' } } },
+        { name: 'show_header', selector: { boolean: {} } },
+        { name: 'show_artwork', selector: { boolean: {} } },
+        { name: 'show_progress', selector: { boolean: {} } },
+        { name: 'show_controls', selector: { boolean: {} } },
+        { name: 'show_volume', selector: { boolean: {} } },
+        { name: 'show_presets', selector: { boolean: {} } },
+        { name: 'show_quick_commands', selector: { boolean: {} } },
+        { name: 'presets', selector: { object: {} } },
+        { name: 'quick_commands', selector: { object: {} } },
+        { name: 'theme', selector: { theme: {} } },
+      ],
+      computeLabel: (schema: { name: string }) => ({
+        entity: 'Медиа-плеер', name: 'Название', name_position: 'Положение названия', icon: 'Иконка',
+        icon_position: 'Положение иконки', layout: 'Расположение карточки', artwork_position: 'Положение обложки',
+        content_align: 'Выравнивание трека', controls_position: 'Положение кнопок', content_size: 'Ширина содержимого (%)',
+        artwork_size: 'Размер обложки (px)', artwork_blur: 'Размытие обложки (px)', opacity: 'Прозрачность',
+        blur: 'Размытие фона (px)', show_header: 'Показывать шапку', show_artwork: 'Показывать обложку',
+        show_progress: 'Показывать прогресс', show_controls: 'Показывать кнопки', show_volume: 'Показывать громкость',
+        show_presets: 'Показывать пресеты', show_quick_commands: 'Показывать команды', presets: 'Пресеты (объект)',
+        quick_commands: 'Быстрые команды (объект)', theme: 'Тема',
+      }[schema.name]),
+    };
+  }
+
+  static getConfigElement(): HTMLElement {
+    return document.createElement('yandex-station-player-editor');
   }
 
   static getStubConfig(): Partial<CardConfig> {
     return {
-      entity: 'media_player.',
       name: 'Алиса',
       icon: 'mdi:speaker-wireless',
       layout: 'horizontal',
