@@ -3,7 +3,30 @@ interface CustomCardRegistration {
   name?: string;
   description?: string;
   preview?: boolean;
+  documentationURL?: string;
+  getEntitySuggestion?: (hass: HomeAssistant, entityId: string) => { config: CardConfig } | null;
 }
+
+type ConfigFormSchema = {
+  name: string;
+  required?: boolean;
+  selector?: Record<string, unknown>;
+  type?: string;
+};
+
+type ConfigForm = {
+  schema: ConfigFormSchema[];
+  computeLabel?: (schema: ConfigFormSchema) => string | undefined;
+  computeHelper?: (schema: ConfigFormSchema) => string | undefined;
+};
+
+type ConfigFormElement = HTMLElement & {
+  setConfig?: (config: CardConfig) => void;
+  hass?: HomeAssistant;
+};
+
+type ConfigChangedEvent = CustomEvent<{ config: CardConfig }>;
+
 
 type MediaState = {
   state: string;
@@ -226,6 +249,127 @@ function currentMediaPosition(attributes: Record<string, unknown>, state: string
   return Math.min(duration, position + Math.max(0, (Date.now() - updatedTimestamp) / 1000));
 }
 
+class YandexStationPlayerEditor extends HTMLElement {
+  private _root: ShadowRoot;
+  private _config: CardConfig = { type: 'custom:yandex-station-player', entity: 'media_player.' };
+  private _hass?: HomeAssistant;
+  private _boundChange: (event: Event) => void;
+
+  constructor() {
+    super();
+    this._root = this.attachShadow({ mode: 'open' });
+    this._boundChange = (event) => this.handleChange(event);
+  }
+
+  setConfig(config: CardConfig): void {
+    this._config = { ...config };
+    this.render();
+  }
+
+  set hass(value: HomeAssistant) {
+    this._hass = value;
+    const form = this._root.querySelector<ConfigFormElement>('ha-form');
+    if (form) form.hass = value;
+  }
+
+  connectedCallback(): void {
+    this._root.addEventListener('value-changed', this._boundChange);
+    this.render();
+  }
+
+  disconnectedCallback(): void {
+    this._root.removeEventListener('value-changed', this._boundChange);
+  }
+
+  private render(): void {
+    this._root.innerHTML = `
+      <style>
+        :host { display:block; }
+        ha-form { display:block; }
+      </style>
+      <ha-form></ha-form>
+    `;
+    const form = this._root.querySelector<ConfigFormElement>('ha-form');
+    if (!form) return;
+    form.hass = this._hass;
+    form.setConfig?.(this._config);
+    form.addEventListener('value-changed', this._boundChange);
+  }
+
+  private handleChange(event: Event): void {
+    const target = event.target as HTMLElement & { value?: Record<string, unknown> };
+    if (target.tagName.toLowerCase() !== 'ha-form' || !target.value) return;
+    const next = { ...this._config, ...(target.value as Partial<CardConfig>) };
+    this._config = next;
+    this.dispatchEvent(new CustomEvent<{ config: CardConfig }>('config-changed', {
+      bubbles: true,
+      composed: true,
+      detail: { config: next },
+    }) as ConfigChangedEvent);
+  }
+}
+
+if (!customElements.get('yandex-station-player-editor')) {
+  customElements.define('yandex-station-player-editor', YandexStationPlayerEditor);
+}
+
+function editorForm(): ConfigForm {
+  return {
+    schema: [
+      { name: 'entity', required: true, selector: { entity: { filter: [{ domain: 'media_player' }] } } },
+      { name: 'name', selector: { text: {} } },
+      { name: 'name_position', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
+      { name: 'icon', selector: { icon: {} } },
+      { name: 'icon_position', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
+      { name: 'layout', selector: { select: { options: ['horizontal', 'vertical'], mode: 'dropdown' } } },
+      { name: 'artwork_position', selector: { select: { options: ['left', 'right', 'top', 'background'], mode: 'dropdown' } } },
+      { name: 'content_align', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
+      { name: 'controls_position', selector: { select: { options: ['left', 'center', 'right'], mode: 'dropdown' } } },
+      { name: 'content_size', selector: { number: { min: 50, max: 100, step: 1, mode: 'slider' } } },
+      { name: 'artwork_size', selector: { number: { min: 48, max: 220, step: 1, mode: 'box' } } },
+      { name: 'artwork_blur', selector: { number: { min: 0, max: 40, step: 1, mode: 'slider' } } },
+      { name: 'opacity', selector: { number: { min: 0.1, max: 1, step: 0.01, mode: 'slider' } } },
+      { name: 'blur', selector: { number: { min: 0, max: 40, step: 1, mode: 'slider' } } },
+      { name: 'show_header', selector: { boolean: {} } },
+      { name: 'show_artwork', selector: { boolean: {} } },
+      { name: 'show_progress', selector: { boolean: {} } },
+      { name: 'show_controls', selector: { boolean: {} } },
+      { name: 'show_volume', selector: { boolean: {} } },
+      { name: 'show_presets', selector: { boolean: {} } },
+      { name: 'show_quick_commands', selector: { boolean: {} } },
+      { name: 'presets', selector: { object: {} } },
+      { name: 'quick_commands', selector: { object: {} } },
+      { name: 'theme', selector: { object: {} } },
+    ],
+    computeLabel: (schema) => ({
+      entity: 'Медиа-плеер',
+      name: 'Название',
+      name_position: 'Положение названия',
+      icon: 'Иконка',
+      icon_position: 'Положение иконки',
+      layout: 'Расположение карточки',
+      artwork_position: 'Положение обложки',
+      content_align: 'Выравнивание трека',
+      controls_position: 'Положение кнопок',
+      content_size: 'Ширина содержимого (%)',
+      artwork_size: 'Размер обложки (px)',
+      artwork_blur: 'Размытие обложки (px)',
+      opacity: 'Прозрачность',
+      blur: 'Размытие фона (px)',
+      show_header: 'Показывать шапку',
+      show_artwork: 'Показывать обложку',
+      show_progress: 'Показывать прогресс',
+      show_controls: 'Показывать кнопки',
+      show_volume: 'Показывать громкость',
+      show_presets: 'Показывать пресеты',
+      show_quick_commands: 'Показывать команды',
+      presets: 'Пресеты (YAML-массив)',
+      quick_commands: 'Быстрые команды (YAML-массив)',
+      theme: 'Тема (YAML-объект)',
+    }[schema.name]),
+  };
+}
+
 class YandexStationPlayerCard extends HTMLElement {
   private _config?: CardConfig;
   private _hass?: HomeAssistant;
@@ -275,6 +419,29 @@ class YandexStationPlayerCard extends HTMLElement {
       if (Math.abs(remote - this._localVolume) < 0.03) this._localVolume = null;
     }
     this.render();
+  }
+
+  static getConfigForm(): ConfigForm {
+    return editorForm();
+  }
+
+  static getStubConfig(): Partial<CardConfig> {
+    return {
+      entity: 'media_player.',
+      name: 'Алиса',
+      icon: 'mdi:speaker-wireless',
+      layout: 'horizontal',
+      artwork_position: 'background',
+      content_align: 'left',
+      controls_position: 'center',
+      show_header: true,
+      show_artwork: true,
+      show_progress: true,
+      show_controls: true,
+      show_volume: true,
+      show_presets: true,
+      show_quick_commands: true,
+    };
   }
 
   getCardSize(): number {
@@ -556,5 +723,12 @@ if (!cards.some((card) => card.type === 'yandex-station-player')) {
     name: 'Yandex Station Player',
     description: 'Mint Teal media player for Yandex.Station media_player entities',
     preview: true,
+    documentationURL: 'https://github.com/AlexxIT/YandexStation',
+    getEntitySuggestion: (hass, entityId) => {
+      if (entityId.startsWith('media_player.') && hass.states[entityId]) {
+        return { config: { type: 'custom:yandex-station-player', entity: entityId } };
+      }
+      return null;
+    },
   });
 }
