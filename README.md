@@ -75,7 +75,7 @@ theme:
   shadow: '0 2px 8px rgba(0,137,123,.08)'
 ```
 
-Позиции заголовка и иконки задаются независимо: `name_position` и `icon_position` принимают `left`, `center` или `right`. Например, `name_position: center` и `icon_position: right` размещают имя по центру, а иконку справа.
+Параметр `content_align` выравнивает только название трека и исполнителя: `left`, `center`, `right`. Положение кнопок воспроизведения задаётся отдельно через `controls_position`: `left`, `center`, `right`. Позиции имени и иконки в шапке задаются независимо через `name_position` и `icon_position`.
 
 ## Прямые медиа-пресеты
 

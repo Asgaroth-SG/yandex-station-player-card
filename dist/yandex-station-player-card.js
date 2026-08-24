@@ -1,6 +1,6 @@
 var X = Object.defineProperty;
 var J = (o, n, e) => n in o ? X(o, n, { enumerable: !0, configurable: !0, writable: !0, value: e }) : o[n] = e;
-var i = (o, n, e) => J(o, typeof n != "symbol" ? n + "" : n, e);
+var r = (o, n, e) => J(o, typeof n != "symbol" ? n + "" : n, e);
 const c = {
   primary: "#00685d",
   accent: "#26a69a",
@@ -36,10 +36,10 @@ const c = {
 .ysp-art { width:var(--ysp-art-size); height:var(--ysp-art-size); flex:0 0 var(--ysp-art-size); object-fit:cover; border-radius:12px; background:var(--ysp-surface); box-shadow:0 2px 6px rgba(0,0,0,.08); }
 .ysp-art-placeholder { display:grid; place-items:center; color:var(--ysp-primary); font-size:30px; }
 .ysp-art-icon { width:32px; height:32px; --mdc-icon-size:32px; }
-.ysp-track-info { min-width:0; flex:1; flex-direction:column; align-items:flex-start; gap:4px; }
+.ysp-track-info { min-width:0; flex:1; flex-direction:column; align-items:var(--ysp-align-items); text-align:var(--ysp-align); gap:4px; }
 .ysp-title { max-width:100%; font:600 20px/28px Manrope, system-ui, sans-serif; }
 .ysp-artist { max-width:100%; color:var(--ysp-secondary); font-size:14px; line-height:20px; }
-.ysp-controls { justify-content:var(--ysp-controls-position); gap:24px; padding:4px 0; }
+.ysp-controls { width:100%; justify-content:var(--ysp-controls-position); gap:24px; padding:4px 0; }
 .ysp-button { display:inline-flex; align-items:center; justify-content:center; text-align:center; padding:0; line-height:0; width:48px; height:48px; border:0; border-radius:999px; cursor:pointer; color:var(--ysp-primary); background:var(--ysp-surface); font:400 24px/1 system-ui; transition:transform .12s ease, filter .12s ease; }
 .ysp-button:hover { filter:brightness(.97); } .ysp-button:active { transform:scale(.95); }
 .ysp-button:focus-visible, .ysp-chip:focus-visible, .ysp-command:focus-visible, .ysp-preset:focus-visible, input:focus-visible { outline:2px solid var(--ysp-accent); outline-offset:2px; }
@@ -79,7 +79,8 @@ const c = {
 .ysp-label { margin:0 0 8px; color:var(--ysp-secondary); font-size:12px; font-weight:600; }
 .ysp-section { position:relative; }
 .ysp-vertical .ysp-track { flex-direction:column; align-items:stretch; text-align:var(--ysp-align); }
-.ysp-vertical .ysp-track-info { align-items:var(--ysp-align-items); }
+.ysp-vertical .ysp-track-info { align-items:var(--ysp-align-items); text-align:var(--ysp-align); }
+.ysp-vertical .ysp-controls { width:100%; justify-content:var(--ysp-controls-position); }
 .ysp-art-right .ysp-art { order:2; }
 .ysp-art-top .ysp-track { flex-direction:column; align-items:stretch; }
 .ysp-art-top .ysp-track-info { align-items:var(--ysp-align-items); text-align:var(--ysp-align); }
@@ -93,7 +94,7 @@ const c = {
 .ysp-card.ysp-art-background .ysp-button.primary { background:var(--ysp-primary); color:var(--ysp-on-primary); }
 .ysp-card.ysp-art-background .ysp-content { position:relative; z-index:1; }
 .ysp-card.ysp-art-background .ysp-content { width:var(--ysp-content-size); margin-inline:auto; }
-.ysp-card.ysp-art-background .ysp-header, .ysp-card.ysp-art-background .ysp-track, .ysp-card.ysp-art-background .ysp-controls { justify-content:var(--ysp-content-justify); }
+.ysp-card.ysp-art-background .ysp-header, .ysp-card.ysp-art-background .ysp-track { justify-content:var(--ysp-content-justify); }
 .ysp-card.ysp-art-background .ysp-track { text-align:var(--ysp-align); }
 .ysp-card.ysp-art-background .ysp-track-info { align-items:var(--ysp-align-items); text-align:var(--ysp-align); }
 .ysp-card.ysp-art-background .ysp-art { display:none; }
@@ -132,29 +133,29 @@ function g(o) {
 function Q(o, n, e) {
   const t = Math.max(0, Number(o.media_position) || 0);
   if (n !== "playing" || e <= 0) return Math.min(t, e);
-  const s = p(o.media_position_updated_at), r = Date.parse(s);
-  return Number.isFinite(r) ? Math.min(e, t + Math.max(0, (Date.now() - r) / 1e3)) : Math.min(t, e);
+  const s = p(o.media_position_updated_at), i = Date.parse(s);
+  return Number.isFinite(i) ? Math.min(e, t + Math.max(0, (Date.now() - i) / 1e3)) : Math.min(t, e);
 }
 class Z extends HTMLElement {
   constructor() {
     super();
-    i(this, "_config");
-    i(this, "_hass");
-    i(this, "_root");
-    i(this, "_boundClick");
-    i(this, "_boundInput");
-    i(this, "_boundPointerDown");
-    i(this, "_boundPointerMove");
-    i(this, "_boundPointerUp");
-    i(this, "_volumeInteracting", !1);
-    i(this, "_volumeOpen", !1);
-    i(this, "_volumeCloseTimer", null);
-    i(this, "_boundPointerOver");
-    i(this, "_boundPointerOut");
-    i(this, "_pendingRender", !1);
-    i(this, "_localVolume", null);
-    i(this, "_volumeSendTimer", null);
-    i(this, "_volumeToSend", null);
+    r(this, "_config");
+    r(this, "_hass");
+    r(this, "_root");
+    r(this, "_boundClick");
+    r(this, "_boundInput");
+    r(this, "_boundPointerDown");
+    r(this, "_boundPointerMove");
+    r(this, "_boundPointerUp");
+    r(this, "_volumeInteracting", !1);
+    r(this, "_volumeOpen", !1);
+    r(this, "_volumeCloseTimer", null);
+    r(this, "_boundPointerOver");
+    r(this, "_boundPointerOut");
+    r(this, "_pendingRender", !1);
+    r(this, "_localVolume", null);
+    r(this, "_volumeSendTimer", null);
+    r(this, "_volumeToSend", null);
     this._root = this.attachShadow({ mode: "open" }), this._boundClick = (e) => this.handleClick(e), this._boundInput = (e) => this.handleInput(e), this._boundPointerDown = (e) => this.handleVolumePointerDown(e), this._boundPointerMove = (e) => this.handleVolumePointerMove(e), this._boundPointerUp = () => this.handleVolumePointerUp(), this._boundPointerOver = (e) => this.handleVolumePointerOver(e), this._boundPointerOut = (e) => this.handleVolumePointerOut(e);
   }
   setConfig(e) {
@@ -204,9 +205,9 @@ class Z extends HTMLElement {
       this._pendingRender = !0;
       return;
     }
-    const e = this.config(), t = this.mediaState(), s = (t == null ? void 0 : t.attributes) ?? {}, r = this.mergedTheme(), a = this._localVolume ?? y(s.volume_level, 0, 1, 0.5), h = Math.max(0, Number(s.media_duration) || 0), b = Q(s, t == null ? void 0 : t.state, h), S = h > 0 ? Math.round(b / h * 1e3) / 10 : 0, w = p(s.media_title, t ? "Ничего не играет" : "Ожидание данных"), $ = p(s.media_artist || s.media_album_name, (t == null ? void 0 : t.state) === "unavailable" ? "Устройство недоступно" : "Яндекс.Станция"), f = p(s.entity_picture), C = y(e.artwork_size, 48, 220, 80), M = y(e.opacity, 0.1, 1, 0.72), L = y(e.blur, 0, 40, 18), V = y(e.artwork_blur, 0, 40, 8), v = e.content_align === "center" ? "center" : e.content_align === "right" ? "right" : "left", I = v === "center" ? "center" : v === "right" ? "flex-end" : "flex-start", j = v === "center" ? "center" : v === "right" ? "flex-end" : "flex-start", O = y(e.content_size, 50, 100, 100), N = e.controls_position === "left" ? "flex-start" : e.controls_position === "right" ? "flex-end" : "center", U = e.layout === "vertical" ? "ysp-vertical" : "", D = e.icon_position === "center" || e.icon_position === "right" ? e.icon_position : "left", A = e.name_position === "center" || e.name_position === "right" ? e.name_position : "left", F = e.show_header === !1 ? "" : `<header class="ysp-header">${["left", "center", "right"].map((u) => `<div class="ysp-header-slot ysp-slot-${u}">${D === u ? d(e.icon ?? "mdi:speaker-wireless", "ysp-device-icon") : ""}${A === u ? `<span class="ysp-name" title="${l(e.name ?? "Яндекс.Станция")}">${l(e.name ?? "Яндекс.Станция")}</span>` : ""}</div>`).join("")}</header>`, H = e.artwork_position === "right" ? "ysp-art-right" : e.artwork_position === "top" ? "ysp-art-top" : e.artwork_position === "background" ? "ysp-art-background" : "", q = "", Y = (t == null ? void 0 : t.state) === "unavailable" || !t, _ = (t == null ? void 0 : t.state) === "playing", x = s.is_volume_muted === !0 || a === 0, P = x ? "mdi:volume-off" : "mdi:volume-high", R = x ? "mdi:volume-high" : "mdi:volume-mute", T = this.normalizedPresets(), z = this.normalizedCommands(), B = `
+    const e = this.config(), t = this.mediaState(), s = (t == null ? void 0 : t.attributes) ?? {}, i = this.mergedTheme(), a = this._localVolume ?? y(s.volume_level, 0, 1, 0.5), h = Math.max(0, Number(s.media_duration) || 0), b = Q(s, t == null ? void 0 : t.state, h), S = h > 0 ? Math.round(b / h * 1e3) / 10 : 0, w = p(s.media_title, t ? "Ничего не играет" : "Ожидание данных"), $ = p(s.media_artist || s.media_album_name, (t == null ? void 0 : t.state) === "unavailable" ? "Устройство недоступно" : "Яндекс.Станция"), f = p(s.entity_picture), C = y(e.artwork_size, 48, 220, 80), M = y(e.opacity, 0.1, 1, 0.72), L = y(e.blur, 0, 40, 18), V = y(e.artwork_blur, 0, 40, 8), v = e.content_align === "center" ? "center" : e.content_align === "right" ? "right" : "left", I = v === "center" ? "center" : v === "right" ? "flex-end" : "flex-start", j = v === "center" ? "center" : v === "right" ? "flex-end" : "flex-start", O = y(e.content_size, 50, 100, 100), N = e.controls_position === "left" ? "flex-start" : e.controls_position === "right" ? "flex-end" : "center", U = e.layout === "vertical" ? "ysp-vertical" : "", D = e.icon_position === "center" || e.icon_position === "right" ? e.icon_position : "left", A = e.name_position === "center" || e.name_position === "right" ? e.name_position : "left", F = e.show_header === !1 ? "" : `<header class="ysp-header">${["left", "center", "right"].map((u) => `<div class="ysp-header-slot ysp-slot-${u}">${D === u ? d(e.icon ?? "mdi:speaker-wireless", "ysp-device-icon") : ""}${A === u ? `<span class="ysp-name" title="${l(e.name ?? "Яндекс.Станция")}">${l(e.name ?? "Яндекс.Станция")}</span>` : ""}</div>`).join("")}</header>`, H = e.artwork_position === "right" ? "ysp-art-right" : e.artwork_position === "top" ? "ysp-art-top" : e.artwork_position === "background" ? "ysp-art-background" : "", q = "", Y = (t == null ? void 0 : t.state) === "unavailable" || !t, _ = (t == null ? void 0 : t.state) === "playing", x = s.is_volume_muted === !0 || a === 0, P = x ? "mdi:volume-off" : "mdi:volume-high", R = x ? "mdi:volume-high" : "mdi:volume-mute", T = this.normalizedPresets(), z = this.normalizedCommands(), B = `
       ${G}
-      :host { --ysp-primary:${m(p(r.primary), c.primary)}; --ysp-accent:${m(p(r.accent), c.accent)}; --ysp-text:${m(p(r.text), c.text)}; --ysp-secondary:${m(p(r.secondary), c.secondary)}; --ysp-surface:${m(p(r.surface), c.surface)}; --ysp-background:${m(p(r.background), c.background)}; --ysp-on-primary:${m(p(r.on_primary), c.on_primary)}; --ysp-border:${m(p(r.border), c.border)}; --ysp-shadow:${m(p(r.shadow), c.shadow)}; --ysp-art-size:${C}px; --ysp-blur:${L}px; --ysp-controls-position:${N}; --ysp-align:${v}; --ysp-align-items:${I}; --ysp-content-justify:${j}; --ysp-content-size:${O}%; }
+      :host { --ysp-primary:${m(p(i.primary), c.primary)}; --ysp-accent:${m(p(i.accent), c.accent)}; --ysp-text:${m(p(i.text), c.text)}; --ysp-secondary:${m(p(i.secondary), c.secondary)}; --ysp-surface:${m(p(i.surface), c.surface)}; --ysp-background:${m(p(i.background), c.background)}; --ysp-on-primary:${m(p(i.on_primary), c.on_primary)}; --ysp-border:${m(p(i.border), c.border)}; --ysp-shadow:${m(p(i.shadow), c.shadow)}; --ysp-art-size:${C}px; --ysp-blur:${L}px; --ysp-controls-position:${N}; --ysp-align:${v}; --ysp-align-items:${I}; --ysp-content-justify:${j}; --ysp-content-size:${O}%; }
       .ysp-card { opacity:${M}; }
       .ysp-card.ysp-art-background .ysp-art-bg { filter:blur(${V}px) brightness(0.85); }
     `, W = e.show_artwork === !1 ? "" : f ? `<img class="ysp-art" src="${l(f)}" alt="Обложка текущего трека">` : `<div class="ysp-art ysp-art-placeholder" aria-label="Нет обложки">${d("mdi:music-note", "ysp-art-icon")}</div>`;
@@ -229,13 +230,13 @@ class Z extends HTMLElement {
     !this._hass || !this._config || this._hass.callService("media_player", e, { entity_id: this._config.entity, ...t });
   }
   handleClick(e) {
-    var r;
+    var i;
     const t = e.target instanceof Element ? e.target.closest("[data-action]") : null;
     if (!t) return;
     const s = t.dataset.action;
     if (s !== "volume") {
       if (s === "play" && this.call("media_play"), s === "pause" && this.call("media_pause"), s === "previous" && this.call("media_previous_track"), s === "next" && this.call("media_next_track"), s === "mute") {
-        const a = ((r = this.mediaState()) == null ? void 0 : r.attributes) ?? {};
+        const a = ((i = this.mediaState()) == null ? void 0 : i.attributes) ?? {};
         this.call("volume_mute", { is_volume_muted: a.is_volume_muted !== !0 });
       }
       if (s === "command") {
@@ -256,8 +257,8 @@ class Z extends HTMLElement {
     const t = e.target instanceof HTMLInputElement ? e.target : null;
     if (t) {
       if (t.dataset.action === "volume") {
-        const s = y(Number(t.value), 0, 1, 0), r = Math.round(s * 100);
-        this._localVolume = s, t.setAttribute("aria-valuetext", `${r} процентов`), t.style.setProperty("--ysp-volume-pct", `${r}%`), t.setAttribute("title", `${r}%`), this.sendVolume(s);
+        const s = y(Number(t.value), 0, 1, 0), i = Math.round(s * 100);
+        this._localVolume = s, t.setAttribute("aria-valuetext", `${i} процентов`), t.style.setProperty("--ysp-volume-pct", `${i}%`), t.setAttribute("title", `${i}%`), this.sendVolume(s);
       }
       t.dataset.action === "seek" && (this.call("media_seek", { seek_position: Number(t.value) }), t.setAttribute("aria-valuetext", `${g(Number(t.value))} из ${g(Number(t.max))}`), t.style.setProperty("--ysp-seek-pct", `${Number(t.max) > 0 ? Number(t.value) / Number(t.max) * 100 : 0}%`));
     }
@@ -279,8 +280,8 @@ class Z extends HTMLElement {
     !this._volumeInteracting || !(e.target instanceof HTMLInputElement) || e.target.dataset.action !== "volume" || this.setVolumeFromPointer(e.target, e);
   }
   setVolumeFromPointer(e, t) {
-    const s = e.getBoundingClientRect(), r = y(s.height > 0 ? (s.bottom - t.clientY) / s.height : 0, 0, 1, 0);
-    e.value = r.toFixed(2), this.handleInput({ target: e });
+    const s = e.getBoundingClientRect(), i = y(s.height > 0 ? (s.bottom - t.clientY) / s.height : 0, 0, 1, 0);
+    e.value = i.toFixed(2), this.handleInput({ target: e });
   }
   handleVolumePointerOver(e) {
     e.target instanceof Element && e.target.closest(".ysp-volume-side") && (this._volumeCloseTimer !== null && (clearTimeout(this._volumeCloseTimer), this._volumeCloseTimer = null), this.setVolumeOpen(!0));
