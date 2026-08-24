@@ -1,7 +1,9 @@
 type: custom:yandex-station-player
 entity: media_player.yandex_station_REPLACE_WITH_EXACT_ENTITY
-name: Яндекс.Станция
+name: Алиса
+name_position: left
 icon: yandex:station-mini
+icon_position: left
 layout: horizontal
 artwork_position: left
 content_align: left

@@ -41,11 +41,15 @@ type CardTheme = Partial<{
   shadow: string;
 }>;
 
+type Position = 'left' | 'center' | 'right';
+
 type CardConfig = {
   type: string;
   entity: string;
   name?: string;
+  name_position?: Position;
   icon?: string;
+  icon_position?: Position;
   opacity?: number;
   blur?: number;
   artwork_size?: number;
@@ -89,7 +93,15 @@ const CARD_STYLE = `
 .ysp-card::before { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(135deg, rgba(255,255,255,.24), transparent 48%); }
 .ysp-content { position:relative; display:flex; flex-direction:column; gap:16px; }
 .ysp-header, .ysp-track, .ysp-track-info, .ysp-controls, .ysp-volume, .ysp-progress, .ysp-command-row, .ysp-preset-row { display:flex; align-items:center; }
-.ysp-header { justify-content:flex-start; gap:12px; min-width:0; }
+.ysp-header { display:grid; grid-template-columns:minmax(0, 1fr) auto minmax(0, 1fr); gap:12px; min-width:0; min-height:20px; }
+.ysp-header-slot { display:flex; align-items:center; min-width:0; gap:12px; }
+.ysp-header-slot.ysp-slot-left { justify-content:flex-start; }
+.ysp-header-slot.ysp-slot-center { justify-content:center; }
+.ysp-header-slot.ysp-slot-right { justify-content:flex-end; }
+.ysp-header .ysp-name { min-width:0; }
+.ysp-header .ysp-slot-left .ysp-name { text-align:left; }
+.ysp-header .ysp-slot-center .ysp-name { text-align:center; }
+.ysp-header .ysp-slot-right .ysp-name { text-align:right; }
 .ysp-name, .ysp-title, .ysp-artist { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ysp-name { font-size:14px; line-height:18px; font-weight:600; color:var(--ysp-secondary); }
 .ysp-chip, .ysp-command, .ysp-preset { display:inline-flex; align-items:center; justify-content:center; text-align:center; vertical-align:middle; border:0; cursor:pointer; font:inherit; }
@@ -351,6 +363,9 @@ class YandexStationPlayerCard extends HTMLElement {
     const contentSize = clamp(config.content_size, 50, 100, 100);
     const controlsPosition = config.controls_position === 'left' ? 'flex-start' : config.controls_position === 'right' ? 'flex-end' : 'center';
     const layout = config.layout === 'vertical' ? 'ysp-vertical' : '';
+    const iconPosition: Position = config.icon_position === 'center' || config.icon_position === 'right' ? config.icon_position : 'left';
+    const namePosition: Position = config.name_position === 'center' || config.name_position === 'right' ? config.name_position : 'left';
+    const header = config.show_header === false ? '' : `<header class="ysp-header">${(['left', 'center', 'right'] as Position[]).map((position) => `<div class="ysp-header-slot ysp-slot-${position}">${iconPosition === position ? renderHaIcon(config.icon ?? 'mdi:speaker-wireless', 'ysp-device-icon') : ''}${namePosition === position ? `<span class="ysp-name" title="${escapeHtml(config.name ?? 'Яндекс.Станция')}">${escapeHtml(config.name ?? 'Яндекс.Станция')}</span>` : ''}</div>`).join('')}</header>`;
     const artworkPosition = config.artwork_position === 'right' ? 'ysp-art-right' : config.artwork_position === 'top' ? 'ysp-art-top' : config.artwork_position === 'background' ? 'ysp-art-background' : '';
     const hoverVolume = ''; // @deprecated: volume_on_hover больше не используется
     const unavailable = state?.state === 'unavailable' || !state;
@@ -375,7 +390,7 @@ class YandexStationPlayerCard extends HTMLElement {
       <style>${styles}</style>
       <article class="ysp-card ${layout} ${artworkPosition} ${hoverVolume} ${this._volumeInteracting ? 'ysp-volume-interacting' : ''}" aria-label="${escapeHtml(config.name ?? 'Яндекс.Станция')}" data-unavailable="${unavailable}">
         <div class="ysp-content">
-          ${config.show_header !== false ? `<header class="ysp-header">${renderHaIcon(config.icon ?? 'mdi:speaker-wireless', 'ysp-device-icon')}<span class="ysp-name">${escapeHtml(config.name ?? 'Яндекс.Станция')}</span></header>` : ''}
+          ${header}
           <section class="ysp-track">${config.artwork_position === 'background' ? '' : artwork}<div class="ysp-track-info"><div class="ysp-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div><div class="ysp-artist" title="${escapeHtml(artist)}">${escapeHtml(artist)}</div></div></section>${picture && config.artwork_position === 'background' ? `<div class="ysp-art-bg" style="background-image:url(${escapeHtml(picture)})" aria-hidden="true"></div>` : ''}
           ${config.show_progress !== false && duration > 0 ? `<section class="ysp-progress" aria-label="Перемотка и громкость"><span>${formatTime(position)}</span><input class="ysp-seek-range ysp-seek" type="range" min="0" max="${duration}" step="1" value="${position}" style="--ysp-seek-pct:${seekPercent}%" data-action="seek" aria-label="Перемотка аудио" aria-valuetext="${formatTime(position)} из ${formatTime(duration)}">${config.show_volume !== false ? `<span class="ysp-volume-side${this._volumeOpen ? ' ysp-volume-open' : ''}"><button class="ysp-volume-icon-button" type="button" data-action="mute" aria-label="${isMuted ? 'Включить звук' : 'Выключить звук'}" aria-haspopup="true">${renderHaIcon(volumeIcon, 'ysp-volume-glyph')}</button><span class="ysp-volume-popover" role="dialog" aria-label="Громкость"><input class="ysp-volume-vertical" type="range" min="0" max="1" step="0.01" value="${volume}" data-action="volume" aria-label="Громкость" aria-valuetext="${Math.round(volume * 100)} процентов" style="--ysp-volume-pct:${Math.round(volume * 100)}%"></span></span>` : ''}<span>${formatTime(duration)}</span></section>` : ''}
           ${config.show_controls !== false ? `<section class="ysp-controls" aria-label="Управление воспроизведением"><button class="ysp-button" type="button" data-action="previous" aria-label="Предыдущий трек">${renderHaIcon('mdi:skip-previous', 'ysp-control-icon')}</button><button class="ysp-button primary" type="button" data-action="${isPlaying ? 'pause' : 'play'}" aria-label="${isPlaying ? 'Пауза' : 'Воспроизвести'}">${renderHaIcon(isPlaying ? 'mdi:pause' : 'mdi:play', 'ysp-control-icon')}</button><button class="ysp-button" type="button" data-action="next" aria-label="Следующий трек">${renderHaIcon('mdi:skip-next', 'ysp-control-icon')}</button></section>` : ''}

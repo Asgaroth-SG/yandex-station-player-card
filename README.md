@@ -20,8 +20,10 @@ url: /local/community/yandex-station-player-card/yandex-station-player-card.js
 ```yaml
 type: custom:yandex-station-player
 entity: media_player.yandex_station_REPLACE_WITH_EXACT_ENTITY
-name: Яндекс.Станция
+name: Алиса
+name_position: left
 icon: yandex:station-mini
+icon_position: left
 
 layout: horizontal
 artwork_position: left
@@ -72,6 +74,8 @@ theme:
   border: 'rgba(0,137,123,.15)'
   shadow: '0 2px 8px rgba(0,137,123,.08)'
 ```
+
+Позиции заголовка и иконки задаются независимо: `name_position` и `icon_position` принимают `left`, `center` или `right`. Например, `name_position: center` и `icon_position: right` размещают имя по центру, а иконку справа.
 
 ## Прямые медиа-пресеты
 
